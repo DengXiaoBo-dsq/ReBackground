@@ -1,0 +1,63 @@
+# ============================================================
+# ReBackground .gitignore
+# 更新日期：2026-09-21
+# 用途：排除构建产物、IDE 配置、临时文件、AI 模型
+# ============================================================
+
+# ---------- Android Studio / IntelliJ ----------
+*.iml
+.idea/
+.gradle/
+.gradle-task/
+local.properties
+captures/
+.externalNativeBuild
+.cxx
+.navigation/
+.DS_Store
+
+# ---------- 构建产物 ----------
+build/
+**/build/
+bin/
+gen/
+out/
+release/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# ---------- Gradle ----------
+.gradletasknamecache
+gradle-app.setting
+
+# ---------- AI 模型（太大，不上传）----------
+*.onnx
+*.pt
+*.pth
+*.tflite
+*.h5
+*.pb
+app/src/main/assets/models/
+app/src/main/assets/model/
+app/src/main/assets/realsr
+
+# ---------- 临时 / 备份 ----------
+temp_frag/
+*.zip
+*.bak
+*.tar
+*.tmp
+*.swp
+*~
+
+# ---------- 日志 / 崩溃 ----------
+*.log
+*.hprof
+hs_err_pid*
+
+# ---------- 系统文件 ----------
+Thumbs.db
+Desktop.ini

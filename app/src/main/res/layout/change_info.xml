@@ -1,0 +1,120 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 图片信息 -->
+    <TextView
+        android:id="@+id/image_info"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:text="图片信息：宽度 x 高度，格式"
+        android:textSize="14sp"
+        android:textColor="@android:color/holo_red_light"
+        android:gravity="start|top"
+        android:layout_marginBottom="10dp" />
+
+    <!-- 修改尺寸 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="宽度"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/width_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入宽度"
+        android:inputType="number"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="高度"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/height_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入高度"
+        android:inputType="number"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="10dp" />
+
+    <!-- 保持宽高比 -->
+    <CheckBox
+        android:id="@+id/keep_aspect_ratio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="保持原有宽高比"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="10dp" />
+
+    <!-- 修改图片格式 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:text="选择图片格式"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <Spinner
+        android:id="@+id/format_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:textSize="14sp"
+
+        android:layout_marginBottom="10dp"
+        android:textColor="@android:color/white"
+        android:popupBackground="#000000"/>
+
+    <!-- 保存路径选择 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存路径"
+        android:textColor="#ffffff"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <CheckBox
+        android:id="@+id/btn_change_RGBA"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="修改透明度"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="10dp" />
+    <EditText
+        android:id="@+id/input_rgba"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输透明度(0--255:)"
+        android:inputType="number"
+        android:textSize="14sp"
+        android:textColor="#ffffff"
+        android:layout_marginBottom="10dp" />
+
+    <!-- 保存按钮 -->
+    <Button
+        android:id="@+id/btn_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存图片"
+        android:textSize="14sp" />
+
+
+
+</LinearLayout>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 从图库取色需要的存储权限 -->
+
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Android 11 及以上版本需要声明 MANAGE_EXTERNAL_STORAGE 权限 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <application
+
+    android:largeHeap="true"
+        android:requestLegacyExternalStorage="true"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/bg1"
+        android:label="@string/app_name"
+        android:hardwareAccelerated="true"
+        android:name=".MyApplication"
+        android:roundIcon="@drawable/bg1"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        tools:replace="android:appComponentFactory"
+        android:theme="@style/Theme.ReBackground"
+
+        tools:targetApi="31">
+        <uses-native-library
+            android:name="libOpenCL.so"
+            android:required="true"/>
+        <uses-native-library
+            android:name="libGLES_mali.so"
+            android:required="true"/>
+
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".CameraActivity" />
+        <activity android:name=".BackgroundPickerActivity" />
+        <activity android:name=".ImageProcessingActivity" />
+        <activity android:name=".UniversalCropActivity" />
+        <activity android:name=".RectCropActivity" />
+        <activity android:name=".CircleCropActivity" />
+        <activity android:name=".FreeCropActivity" />
+        <activity android:name=".ActivationActivity" />
+        <activity android:name=".KeyManagementActivity" />
+        <activity android:name=".ChangeInfoActivity"/>
+        <activity android:name=".CreateImageSettingsActivity"/>
+        <activity android:name=".DisplayBlankImageActivity"/>
+        <activity android:name=".ToolSettingsActivity"/>
+        <activity android:name=".color_picker_view"/>
+        <activity android:name=".rebg_by_lama"/>
+        <activity android:name=".AddTextActivity"/>
+        <activity android:name=".FavoriteGroupsActivity" />
+        <activity android:name=".FavoriteColorsActivity" />
+        <activity android:name=".ColorExtractSettingActivity" />
+        <!-- 在 <application> 内部添加 -->
+        <activity android:name=".ImageColorPickerActivity" />
+        <activity android:name=".PaintActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize" />
+        <activity
+            android:name=".paint.preview.GpuPaintPreviewActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize" />
+        <activity android:name=".PaintSettingsActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize" />
+
+
+        <!-- RealSR 相关组件 -->
+        <!-- ★★★ 为 RealSRMainActivity 单独指定浅色主题 ★★★ -->
+        <activity
+            android:name=".realsr.RealSRMainActivity"
+            android:launchMode="singleTop"
+            android:exported="true"
+            android:label="@string/realsr_app_name"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
+
+        <activity
+            android:name=".realsr.SettingActivity"
+            android:parentActivityName=".realsr.RealSRMainActivity"
+            android:exported="false"
+            android:label="@string/realsr_setting"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
+
+        <activity
+            android:name=".realsr.LabelEditorActivity"
+            android:parentActivityName=".realsr.SettingActivity"
+            android:exported="false"
+            android:label="@string/realsr_label_editor_title"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
+
+        <activity
+            android:name=".realsr.DirectoryProcessActivity"
+            android:parentActivityName=".realsr.RealSRMainActivity"
+            android:exported="false"
+            android:label="@string/realsr_dir_process_title"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
+        <activity
+            android:name=".BrushLibraryActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize" />
+        <activity
+            android:name=".CustomBrushEditorActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize" />
+
+        <!-- FileProvider 已存在，无需重复添加 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        <service android:name=".realsr.ProcessingService" />
+
+    </application>
+
+</manifest>
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<manifest xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:tools="http://schemas.android.com/tools">-->
+
+<!--    <uses-feature-->
+<!--        android:name="android.hardware.camera"-->
+<!--        android:required="false" />-->
+<!--    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />-->
+<!--    <uses-permission android:name="android.permission.INTERNET" />-->
+<!--    <uses-permission android:name="android.permission.CAMERA" />-->
+<!--    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />-->
+<!--    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />-->
+<!--    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />-->
+
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />-->
+<!--    &lt;!&ndash; Android 11 及以上版本需要声明 MANAGE_EXTERNAL_STORAGE 权限 &ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"-->
+<!--        tools:ignore="ScopedStorage" />-->
+
+<!--    <application-->
+
+<!--        android:largeHeap="true"-->
+<!--        android:requestLegacyExternalStorage="true"-->
+<!--        android:allowBackup="true"-->
+<!--        android:dataExtractionRules="@xml/data_extraction_rules"-->
+<!--        android:fullBackupContent="@xml/backup_rules"-->
+<!--        android:icon="@drawable/bg1"-->
+<!--        android:label="@string/app_name"-->
+<!--        android:hardwareAccelerated="true"-->
+<!--        android:name=".MyApplication"-->
+<!--        android:roundIcon="@drawable/bg1"-->
+<!--        android:supportsRtl="true"-->
+<!--        android:usesCleartextTraffic="true"-->
+<!--        android:appComponentFactory="androidx.core.app.CoreComponentFactory"-->
+<!--        tools:replace="android:appComponentFactory"-->
+<!--        android:theme="@style/Theme.ReBackground"-->
+<!--        tools:targetApi="31">-->
+
+<!--        <activity-->
+<!--            android:name=".MainActivity"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
+
+<!--        <activity android:name=".CameraActivity" />-->
+
+<!--        <activity android:name=".BackgroundPickerActivity" />-->
+<!--        <activity android:name=".ImageProcessingActivity" />-->
+<!--        <activity android:name=".UniversalCropActivity" />-->
+<!--        <activity android:name=".RectCropActivity" />-->
+<!--        <activity android:name=".CircleCropActivity" />-->
+<!--        <activity android:name=".FreeCropActivity" />-->
+<!--        <activity android:name=".ActivationActivity" />-->
+
+<!--        <activity android:name=".KeyManagementActivity" />-->
+<!--        <activity android:name=".ChangeInfoActivity"/>-->
+<!--        <activity android:name="CreateImageSettingsActivity"/>-->
+<!--        <activity android:name="DisplayBlankImageActivity"/>-->
+<!--        <activity android:name="ToolSettingsActivity"/>-->
+<!--        <activity android:name="color_picker_view"/>-->
+<!--        <activity android:name=".rebg_by_lama"/>-->
+<!--        <activity android:name=".AddTextActivity"/>-->
+<!--        &lt;!&ndash; 满屏水印设置界面 Activity &ndash;&gt;-->
+
+
+<!--        <provider-->
+<!--            android:name="androidx.core.content.FileProvider"-->
+<!--            android:authorities="${applicationId}.fileprovider"-->
+<!--            android:exported="false"-->
+<!--            android:grantUriPermissions="true">-->
+<!--            <meta-data-->
+<!--                android:name="android.support.FILE_PROVIDER_PATHS"-->
+<!--                android:resource="@xml/file_paths" />-->
+<!--        </provider>-->
+
+<!--    </application>-->
+
+<!--</manifest>-->
+

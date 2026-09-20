@@ -1,0 +1,39 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 基础应用主题 -->
+    <style name="Base.Theme.ReBackground" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 背景色 -->
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="colorSurface">@color/background_dark</item>
+
+        <!-- 文本颜色 -->
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- 按钮样式 -->
+        <item name="materialButtonStyle">@style/ButtonStyle</item>
+
+        <!-- 自定义字体 -->
+        <item name="android:fontFamily">@font/lisu</item>
+
+        <!-- Material 3 颜色配置 -->
+        <item name="colorPrimary">@color/button_background</item>
+        <item name="colorOnPrimary">@color/button_text</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+    </style>
+
+    <!-- 应用主题 -->
+    <style name="Theme.ReBackground" parent="Base.Theme.ReBackground" />
+
+    <!-- 按钮样式 -->
+    <style name="ButtonStyle" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/button_background</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="cornerRadius">0dp</item>
+        <item name="strokeColor">@color/text_primary</item>
+        <item name="strokeWidth">1dp</item>
+        <!-- 新增 -->
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:minWidth">80dp</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/seekbar_thumb" /> <!-- 滑块颜色 -->
+    <corners android:radius="8dp" /> <!-- 圆角半径 -->
+    <size android:width="16dp" android:height="16dp" /> <!-- 滑块大小 -->
+</shape>

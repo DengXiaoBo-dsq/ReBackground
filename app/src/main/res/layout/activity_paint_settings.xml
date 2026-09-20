@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E1E"
+    android:padding="16dp">
+
+    <!-- 标题栏 -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#2A2A2A"
+        android:title="设置"
+        android:titleTextColor="#FFFFFF"
+        app:navigationIcon="@drawable/ic_back"
+        app:navigationContentDescription="返回" />
+
+    <!-- 内容 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- 流量 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="流量"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:layout_marginTop="12dp" />
+            <SeekBar
+                android:id="@+id/settingsFlowSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="99"
+                android:progress="50"
+                android:thumbTint="#FF9800"
+                android:progressTint="#FF9800" />
+
+            <!-- 透明度 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="透明度"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:layout_marginTop="12dp" />
+            <SeekBar
+                android:id="@+id/settingsOpacitySeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="99"
+                android:progress="99"
+                android:thumbTint="#FF9800"
+                android:progressTint="#FF9800" />
+
+            <!-- 旋转开关 -->
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/settingsRotationSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="允许旋转画布"
+                android:textColor="#FFFFFF"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                android:layout_marginTop="12dp" />
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#555555"
+                android:layout_marginVertical="16dp" />
+
+            <!-- 导出 -->
+            <Button
+                android:id="@+id/settingsExportBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导出图片"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#FF9800"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 纹理选择 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="画笔纹理"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:layout_marginTop="8dp" />
+            <Spinner
+                android:id="@+id/settingsTextureSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/spinner_bg"
+                android:entries="@array/texture_options"
+                android:layout_marginTop="4dp" />
+
+            <!-- 导入纹理按钮 -->
+            <Button
+                android:id="@+id/settingsImportTextureBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导入自定义纹理"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#555555"
+                android:layout_marginTop="8dp" />
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#555555"
+                android:layout_marginVertical="16dp" />
+
+            <!-- 导入草稿 -->
+            <Button
+                android:id="@+id/settingsImportDraftBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导入草稿 (.rebrush)"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#3F51B5"
+                android:layout_marginTop="8dp" />
+
+            <!-- 导入图片（预留） -->
+            <Button
+                android:id="@+id/settingsImportImageBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导入图片 (PNG/JPEG)"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#607D8B"
+                android:layout_marginTop="8dp" />
+
+            <!-- 更多扩展预留 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#555555"
+                android:layout_marginVertical="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="更多功能开发中..."
+                android:textColor="#888888"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:layout_gravity="center" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

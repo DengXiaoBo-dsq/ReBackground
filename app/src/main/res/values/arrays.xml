@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 你原有的其他数组可以保留在这里 -->
+    <string-array name="export_formats">
+        <item>PNG (带透明通道)</item>
+        <item>JPEG (高质量)</item>
+    </string-array>
+    <string-array name="texture_options">
+        <item>无纹理</item>
+        <item>水彩纸</item>
+        <item>画布纹理</item>
+        <item>粗纹纸</item>
+        <item>细纹纸</item>
+    </string-array>
+
+    <string-array name="texture_array">
+        <item>无</item>
+        <item>画布纹理</item>
+        <item>水彩纸</item>
+    </string-array>
+
+        <string-array name="texture_size_options">
+            <item>128×128</item>
+            <item>256×256</item>
+            <item>512×512</item>
+            <item>自定义...</item>
+        </string-array>
+
+</resources>

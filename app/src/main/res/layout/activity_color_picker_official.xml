@@ -1,0 +1,959 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1E1E1E"
+    tools:context=".color_picker_view">
+
+    <!-- ========== 标题行 ========== -->
+    <LinearLayout
+        android:id="@+id/titleLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="选择颜色"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center_horizontal" />
+
+        <Button
+            android:id="@+id/btnSwitchStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="切换样式"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:padding="8dp" />
+    </LinearLayout>
+
+    <!-- ========== 色盘容器 ========== -->
+    <FrameLayout
+        android:id="@+id/colorPickerContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_after_colorpicker"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/titleLayout">
+
+        <!-- 样式1：三段断开式（HSV）使用默认宽度和指示器 -->
+        <com.madrapps.pikolo.HSLColorPicker
+            android:id="@+id/colorPickerStyle1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="0dp"
+            app:radius_offset="20dp"
+            app:indicator_stroke_color="#FFFFFF"
+            app:indicator_stroke_width="2dp"
+            app:hue_arc_length="110"
+            app:saturation_arc_length="110"
+            app:lightness_arc_length="110"
+            app:hue_start_angle="30"
+            app:saturation_start_angle="150"
+            app:lightness_start_angle="270"
+            app:hue_indicator_stroke_color="#FFFFFF"
+            app:saturation_indicator_stroke_color="#FFFFFF"
+            app:lightness_indicator_stroke_color="#FFFFFF" />
+
+        <!-- 样式2：拆分层式（H整圆在外，S+V弧在内） -->
+        <FrameLayout
+            android:id="@+id/colorPickerStyle2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <!-- 内层：S 和 V 弧（先声明，在下层）使用默认指示器 -->
+            <com.madrapps.pikolo.HSLColorPicker
+                android:id="@+id/colorPickerInner"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="0dp"
+                app:radius_offset="60dp"
+                app:indicator_stroke_color="#FFFFFF"
+                app:indicator_stroke_width="2dp"
+                app:hue_arc_length="0"
+                app:saturation_arc_length="130"
+                app:lightness_arc_length="130"
+                app:saturation_start_angle="0"
+                app:lightness_start_angle="180"
+                app:hue_indicator_radius="0dp"
+                app:saturation_indicator_stroke_color="#FFFFFF"
+                app:lightness_indicator_stroke_color="#FFFFFF"
+                app:hue_indicator_stroke_color="@android:color/transparent" />
+
+            <!-- 外层：H 整圆（后声明，覆盖在上层，优先响应触摸）使用默认指示器 -->
+            <com.madrapps.pikolo.HSLColorPicker
+                android:id="@+id/colorPickerOuter"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="0dp"
+                app:radius_offset="5dp"
+                app:indicator_stroke_color="#FFFFFF"
+                app:indicator_stroke_width="2dp"
+                app:hue_arc_length="360"
+                app:saturation_arc_length="0"
+                app:lightness_arc_length="0"
+                app:saturation_indicator_radius="0dp"
+                app:lightness_indicator_radius="0dp"
+                app:hue_indicator_stroke_color="#FFFFFF"
+                app:saturation_indicator_stroke_color="@android:color/transparent"
+                app:lightness_indicator_stroke_color="@android:color/transparent" />
+        </FrameLayout>
+
+        <!-- 样式3：RGB三段断开式使用默认指示器 -->
+        <com.madrapps.pikolo.RGBColorPicker
+            android:id="@+id/colorPickerStyle3"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="0dp"
+            android:visibility="gone"
+            app:radius_offset="20dp"
+            app:indicator_stroke_color="#FFFFFF"
+            app:indicator_stroke_width="2dp"
+            app:arc_length="110"
+            app:red_start_angle="30"
+            app:green_start_angle="150"
+            app:blue_start_angle="270"
+            app:red_indicator_stroke_color="#FFFFFF"
+            app:green_indicator_stroke_color="#FFFFFF"
+            app:blue_indicator_stroke_color="#FFFFFF" />
+
+        <!-- 中心预览圆 -->
+        <View
+            android:id="@+id/colorPreview"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/circle_white_border"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <!-- ========== 辅助线 ========== -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_after_colorpicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.50" />
+
+    <!-- ========== HSV 数值显示 ========== -->
+    <LinearLayout
+        android:id="@+id/hsvLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline_after_colorpicker">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="H: "
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvHue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0°"
+            android:textColor="#FF5722"
+            android:textSize="14sp"
+            android:layout_marginEnd="12dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S: "
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvSaturation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:layout_marginEnd="12dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="V: "
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"
+            android:textColor="#2196F3"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- ========== 透明度滑块 ========== -->
+    <LinearLayout
+        android:id="@+id/alphaLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/hsvLayout">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="透明度"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"
+            android:minWidth="32dp" />
+        <SeekBar
+            android:id="@+id/alphaSeekBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="255"
+            android:thumbTint="#FFFFFF" />
+        <TextView
+            android:id="@+id/alphaText"
+            android:layout_width="48dp"
+            android:layout_height="wrap_content"
+            android:text="255"
+            android:textColor="#FFFFFF"
+            android:textAlignment="viewEnd"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- ========== HEX/RGB 输入行 ========== -->
+    <LinearLayout
+        android:id="@+id/colorInputLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/alphaLayout">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HEX"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp" />
+        <EditText
+            android:id="@+id/etHex"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:hint="#FFFFFFFF"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:inputType="text"
+            android:maxLength="9"
+            android:background="#DD333333"
+            android:padding="4dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="R"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp" />
+        <EditText
+            android:id="@+id/etR"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:maxLength="3"
+            android:textColor="#FFFFFF"
+            android:background="#DD333333"
+            android:padding="4dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="G"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+        <EditText
+            android:id="@+id/etG"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:maxLength="3"
+            android:textColor="#FFFFFF"
+            android:background="#DD333333"
+            android:padding="4dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="B"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+        <EditText
+            android:id="@+id/etB"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:maxLength="3"
+            android:textColor="#FFFFFF"
+            android:background="#DD333333"
+            android:padding="4dp" />
+    </LinearLayout>
+
+    <!-- ========== 当前颜色预览 + 操作按钮行 ========== -->
+    <LinearLayout
+        android:id="@+id/currentColorRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/colorInputLayout">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前颜色"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp" />
+
+        <View
+            android:id="@+id/currentColorPreview"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp" />
+
+        <Button
+            android:id="@+id/btnAddFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="收藏"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp" />
+
+        <ImageButton
+            android:id="@+id/btnGallery"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_folder"
+            android:background="@android:color/transparent"
+            android:contentDescription="图片取色"
+            android:tint="#FFFFFF"
+            android:layout_marginEnd="8dp" />
+
+        <ImageButton
+            android:id="@+id/btnMoreFavorites"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_more_vert"
+            android:background="@android:color/transparent"
+            android:tint="#FFFFFF"
+            android:contentDescription="更多收藏夹"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- ========== 收藏颜色区域 ========== -->
+    <LinearLayout
+        android:id="@+id/favoritesLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/currentColorRow">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="收藏颜色"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <HorizontalScrollView
+            android:id="@+id/favoritesScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/favoritesContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/tvNoFavorites"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="暂无收藏颜色"
+            android:textColor="#AAAAAA"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:padding="8dp"
+            android:visibility="visible" />
+    </LinearLayout>
+
+    <!-- ========== 确定 / 取消 按钮 ========== -->
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/favoritesLayout"
+        app:layout_constraintBottom_toBottomOf="parent">
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="取消"
+            android:textSize="16sp"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp"/>
+        <Button
+            android:id="@+id/btnConfirm"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="确定"
+            android:textSize="16sp"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:background="#1E1E1E"-->
+<!--    tools:context=".color_picker_view">-->
+
+<!--    &lt;!&ndash; ========== 标题行 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/titleLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center_vertical"-->
+<!--        android:paddingStart="16dp"-->
+<!--        android:paddingEnd="16dp"-->
+<!--        android:paddingTop="8dp"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_weight="1"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="选择颜色"-->
+<!--            android:textSize="20sp"-->
+<!--            android:textStyle="bold"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:gravity="center_horizontal" />-->
+
+<!--        <Button-->
+<!--            android:id="@+id/btnSwitchStyle"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="切换样式"-->
+<!--            android:background="#333333"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:padding="8dp" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== 色盘容器 ========== &ndash;&gt;-->
+<!--    <FrameLayout-->
+<!--        android:id="@+id/colorPickerContainer"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="0dp"-->
+<!--        android:layout_marginStart="16dp"-->
+<!--        android:layout_marginEnd="16dp"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        app:layout_constraintBottom_toTopOf="@+id/guideline_after_colorpicker"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/titleLayout">-->
+
+<!--        &lt;!&ndash; 样式1：三段断开式（HSV） &ndash;&gt;-->
+<!--        <com.madrapps.pikolo.HSLColorPicker-->
+<!--            android:id="@+id/colorPickerStyle1"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:padding="0dp"-->
+<!--            app:arc_width="20dp"-->
+<!--            app:radius_offset="20dp"-->
+<!--            app:indicator_radius="20dp"-->
+<!--            app:indicator_stroke_color="#FFFFFF"-->
+<!--            app:indicator_stroke_width="2dp"-->
+<!--            app:hue_arc_length="95"-->
+<!--            app:saturation_arc_length="95"-->
+<!--            app:lightness_arc_length="95"-->
+<!--            app:hue_start_angle="30"-->
+<!--            app:saturation_start_angle="150"-->
+<!--            app:lightness_start_angle="270"-->
+<!--            app:hue_indicator_stroke_color="#FFFFFF"-->
+<!--            app:saturation_indicator_stroke_color="#FFFFFF"-->
+<!--            app:lightness_indicator_stroke_color="#FFFFFF" />-->
+
+<!--        &lt;!&ndash; 样式2：拆分层式（H整圆在外，S+V弧在内） &ndash;&gt;-->
+<!--        <FrameLayout-->
+<!--            android:id="@+id/colorPickerStyle2"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:visibility="gone">-->
+
+<!--            &lt;!&ndash; 内层：S 和 V 弧（先声明，在下层） &ndash;&gt;-->
+<!--            <com.madrapps.pikolo.HSLColorPicker-->
+<!--                android:id="@+id/colorPickerInner"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:padding="0dp"-->
+<!--                app:arc_width="20dp"-->
+<!--                app:radius_offset="60dp"-->
+<!--                app:indicator_radius="20dp"-->
+<!--                app:indicator_stroke_color="#FFFFFF"-->
+<!--                app:indicator_stroke_width="2dp"-->
+<!--                app:hue_arc_length="0"-->
+<!--                app:saturation_arc_length="160"-->
+<!--                app:lightness_arc_length="160"-->
+<!--                app:saturation_start_angle="0"-->
+<!--                app:lightness_start_angle="180"-->
+<!--                app:hue_indicator_radius="0dp"-->
+<!--                app:saturation_indicator_radius="20dp"-->
+<!--                app:lightness_indicator_radius="20dp"-->
+<!--                app:saturation_indicator_stroke_color="#FFFFFF"-->
+<!--                app:lightness_indicator_stroke_color="#FFFFFF"-->
+<!--                app:hue_indicator_stroke_color="@android:color/transparent" />-->
+
+<!--            &lt;!&ndash; 外层：H 整圆（后声明，覆盖在上层，优先响应触摸） &ndash;&gt;-->
+<!--            <com.madrapps.pikolo.HSLColorPicker-->
+<!--                android:id="@+id/colorPickerOuter"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:padding="0dp"-->
+<!--                app:arc_width="20dp"-->
+<!--                app:radius_offset="5dp"-->
+<!--                app:indicator_radius="20dp"-->
+<!--                app:indicator_stroke_color="#FFFFFF"-->
+<!--                app:indicator_stroke_width="2dp"-->
+<!--                app:hue_arc_length="360"-->
+<!--                app:saturation_arc_length="0"-->
+<!--                app:lightness_arc_length="0"-->
+<!--                app:hue_indicator_radius="20dp"-->
+<!--                app:saturation_indicator_radius="0dp"-->
+<!--                app:lightness_indicator_radius="0dp"-->
+<!--                app:hue_indicator_stroke_color="#FFFFFF"-->
+<!--                app:saturation_indicator_stroke_color="@android:color/transparent"-->
+<!--                app:lightness_indicator_stroke_color="@android:color/transparent" />-->
+<!--        </FrameLayout>-->
+
+<!--        &lt;!&ndash; 样式3：RGB三段断开式 &ndash;&gt;-->
+<!--        <com.madrapps.pikolo.RGBColorPicker-->
+<!--            android:id="@+id/colorPickerStyle3"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:padding="0dp"-->
+<!--            android:visibility="gone"-->
+<!--            app:arc_width="20dp"-->
+<!--            app:radius_offset="20dp"-->
+<!--            app:indicator_radius="20dp"-->
+<!--            app:indicator_stroke_color="#FFFFFF"-->
+<!--            app:indicator_stroke_width="2dp"-->
+<!--            app:arc_length="95"-->
+<!--            app:red_start_angle="30"-->
+<!--            app:green_start_angle="150"-->
+<!--            app:blue_start_angle="270"-->
+<!--            app:red_indicator_stroke_color="#FFFFFF"-->
+<!--            app:green_indicator_stroke_color="#FFFFFF"-->
+<!--            app:blue_indicator_stroke_color="#FFFFFF" />-->
+
+<!--        &lt;!&ndash; 中心预览圆（覆盖在最上层，不拦截触摸） &ndash;&gt;-->
+<!--        <View-->
+<!--            android:id="@+id/colorPreview"-->
+<!--            android:layout_width="80dp"-->
+<!--            android:layout_height="80dp"-->
+<!--            android:background="@drawable/circle_white_border"-->
+<!--            android:clickable="false"-->
+<!--            android:focusable="false"-->
+<!--            android:focusableInTouchMode="false"-->
+<!--            android:layout_gravity="center" />-->
+<!--    </FrameLayout>-->
+
+<!--    &lt;!&ndash; 辅助线，用于分隔色盘与下方控件 &ndash;&gt;-->
+<!--    <androidx.constraintlayout.widget.Guideline-->
+<!--        android:id="@+id/guideline_after_colorpicker"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        app:layout_constraintGuide_percent="0.50" />-->
+
+<!--    &lt;!&ndash; ========== HSV 数值显示 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/hsvLayout"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="@+id/guideline_after_colorpicker">-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="H: "-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="14sp" />-->
+<!--        <TextView-->
+<!--            android:id="@+id/tvHue"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="0°"-->
+<!--            android:textColor="#FF5722"-->
+<!--            android:textSize="14sp"-->
+<!--            android:layout_marginEnd="12dp" />-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="S: "-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="14sp" />-->
+<!--        <TextView-->
+<!--            android:id="@+id/tvSaturation"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="100%"-->
+<!--            android:textColor="#4CAF50"-->
+<!--            android:textSize="14sp"-->
+<!--            android:layout_marginEnd="12dp" />-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="V: "-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="14sp" />-->
+<!--        <TextView-->
+<!--            android:id="@+id/tvValue"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="100%"-->
+<!--            android:textColor="#2196F3"-->
+<!--            android:textSize="14sp" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== 透明度滑块 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/alphaLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center_vertical"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/hsvLayout">-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="透明度"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="14sp"-->
+<!--            android:layout_marginEnd="8dp"-->
+<!--            android:minWidth="32dp" />-->
+<!--        <SeekBar-->
+<!--            android:id="@+id/alphaSeekBar"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:max="255"-->
+<!--            android:progress="255"-->
+<!--            android:thumbTint="#FFFFFF" />-->
+<!--        <TextView-->
+<!--            android:id="@+id/alphaText"-->
+<!--            android:layout_width="48dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="255"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textAlignment="viewEnd"-->
+<!--            android:layout_marginStart="8dp" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== HEX/RGB 输入行 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/colorInputLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        android:orientation="horizontal"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/alphaLayout">-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="HEX"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="14sp"-->
+<!--            android:layout_marginEnd="8dp" />-->
+<!--        <EditText-->
+<!--            android:id="@+id/etHex"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="2"-->
+<!--            android:hint="#FFFFFFFF"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="12sp"-->
+<!--            android:inputType="text"-->
+<!--            android:maxLength="9"-->
+<!--            android:background="#DD333333"-->
+<!--            android:padding="4dp" />-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="R"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginStart="8dp"-->
+<!--            android:layout_marginEnd="4dp" />-->
+<!--        <EditText-->
+<!--            android:id="@+id/etR"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:inputType="number"-->
+<!--            android:maxLength="3"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:background="#DD333333"-->
+<!--            android:padding="4dp" />-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="G"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginStart="4dp"-->
+<!--            android:layout_marginEnd="4dp" />-->
+<!--        <EditText-->
+<!--            android:id="@+id/etG"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:inputType="number"-->
+<!--            android:maxLength="3"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:background="#DD333333"-->
+<!--            android:padding="4dp" />-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="B"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginStart="4dp"-->
+<!--            android:layout_marginEnd="4dp" />-->
+<!--        <EditText-->
+<!--            android:id="@+id/etB"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:inputType="number"-->
+<!--            android:maxLength="3"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:background="#DD333333"-->
+<!--            android:padding="4dp" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== 当前颜色预览 + 操作按钮行 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/currentColorRow"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:layout_marginTop="12dp"-->
+<!--        android:gravity="center_vertical"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/colorInputLayout">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="当前颜色"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginEnd="8dp" />-->
+
+<!--        <View-->
+<!--            android:id="@+id/currentColorPreview"-->
+<!--            android:layout_width="48dp"-->
+<!--            android:layout_height="48dp"-->
+<!--            android:layout_marginEnd="16dp" />-->
+
+<!--        <Button-->
+<!--            android:id="@+id/btnAddFavorite"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="收藏"-->
+<!--            android:background="#333333"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginEnd="8dp" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/btnGallery"-->
+<!--            android:layout_width="48dp"-->
+<!--            android:layout_height="48dp"-->
+<!--            android:src="@drawable/ic_folder"-->
+<!--            android:background="@android:color/transparent"-->
+<!--            android:contentDescription="图片取色"-->
+<!--            android:tint="#FFFFFF"-->
+<!--            android:layout_marginEnd="8dp" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/btnMoreFavorites"-->
+<!--            android:layout_width="48dp"-->
+<!--            android:layout_height="48dp"-->
+<!--            android:src="@drawable/ic_more_vert"-->
+<!--            android:background="@android:color/transparent"-->
+<!--            android:tint="#FFFFFF"-->
+<!--            android:contentDescription="更多收藏夹"-->
+<!--            android:visibility="gone" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== 收藏颜色区域 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/favoritesLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="vertical"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/currentColorRow">-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:gravity="center_vertical">-->
+<!--            <TextView-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="收藏颜色"-->
+<!--                android:textSize="14sp"-->
+<!--                android:textStyle="bold"-->
+<!--                android:textColor="#FFFFFF" />-->
+<!--        </LinearLayout>-->
+
+<!--        <HorizontalScrollView-->
+<!--            android:id="@+id/favoritesScrollView"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:scrollbars="horizontal"-->
+<!--            android:paddingTop="4dp"-->
+<!--            android:paddingBottom="4dp"-->
+<!--            android:visibility="gone">-->
+<!--            <LinearLayout-->
+<!--                android:id="@+id/favoritesContainer"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal" />-->
+<!--        </HorizontalScrollView>-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/tvNoFavorites"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="暂无收藏颜色"-->
+<!--            android:textColor="#AAAAAA"-->
+<!--            android:textSize="12sp"-->
+<!--            android:gravity="center"-->
+<!--            android:padding="8dp"-->
+<!--            android:visibility="visible" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ========== 确定 / 取消 按钮 ========== &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/buttonLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:layout_marginTop="12dp"-->
+<!--        android:layout_marginBottom="16dp"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/favoritesLayout"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent">-->
+<!--        <Button-->
+<!--            android:id="@+id/btnCancel"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:text="取消"-->
+<!--            android:textSize="16sp"-->
+<!--            android:background="#333333"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginEnd="8dp"/>-->
+<!--        <Button-->
+<!--            android:id="@+id/btnConfirm"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:text="确定"-->
+<!--            android:textSize="16sp"-->
+<!--            android:background="#333333"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:layout_marginStart="8dp"/>-->
+<!--    </LinearLayout>-->
+
+<!--</androidx.constraintlayout.widget.ConstraintLayout>-->

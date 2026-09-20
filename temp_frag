@@ -1,0 +1,37 @@
+precision mediump float;
+varying vec2 vUnitPosition;
+uniform vec4 uColor;
+uniform sampler2D uBrushTexture;
+uniform float uUseTexture;
+uniform float uFlow;   // [MOD 2026-09-11] 单 stamp 沉积率
+
+void main() {
+    if (uUseTexture < 0.5 && dot(vUnitPosition, vUnitPosition) > 1.0) {
+        discard;
+    }
+    float alpha = uColor.a * uFlow;
+    if (uUseTexture > 0.5) {
+        vec2 texCoord = vUnitPosition * 0.5 + 0.5;
+        alpha = texture2D(uBrushTexture, texCoord).a * uColor.a * uFlow;
+    }
+    // [MOD 2026-09-11] Mixbox 集成：输出 sRGB 颜色 × alpha
+    // stroke.rgb = Σ(color × a)，stroke.a = Σa
+    gl_FragColor = vec4(uColor.rgb * alpha, alpha);
+}
+
+
+
+precision mediump float;
+varying vec2 vTexCoord;
+uniform sampler2D uTexture;
+
+void main() {
+    // [MOD 2026-09-11 DEBUG] 文档外区域显示蓝色，用于可视化边界
+    // 正式版本请删掉这个分支，恢复为纯 passthrough
+    if (vTexCoord.x < 0.0 || vTexCoord.x > 1.0 ||
+        vTexCoord.y < 0.0 || vTexCoord.y > 1.0) {
+        gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);   // 纯蓝
+        return;
+    }
+    gl_FragColor = texture2D(uTexture, vTexCoord);
+}

@@ -1,0 +1,189 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 画笔工具 -->
+    <CheckBox
+        android:id="@+id/paintCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="使用画笔"
+        android:textColor="#2e8b57"/>
+
+    <TextView
+        android:id="@+id/brushSizeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="画笔粗细: 0" />
+
+    <SeekBar
+        android:id="@+id/brushSizeSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="150"
+        android:progress="10" />
+
+    <!-- 文本工具 -->
+    <CheckBox
+        android:id="@+id/textCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="使用文本"
+        android:textColor="#2e8b57"/>
+
+    <TextView
+        android:id="@+id/textSizeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="文本大小: 0" />
+
+    <SeekBar
+        android:id="@+id/textSizeSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="1200"
+        android:progress="12" />
+
+    <!-- 橡皮擦工具 -->
+    <CheckBox
+        android:id="@+id/eraseCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="使用橡皮"
+        android:textColor="#2e8b57"/>
+
+    <TextView
+        android:id="@+id/eraseSizeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="橡皮大小: 0" />
+
+    <SeekBar
+        android:id="@+id/eraseSizeSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="10" />
+    <TextView
+        android:id="@+id/font_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="字体样式"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:padding="4dp"
+        android:layout_marginTop="6dp"/>
+
+    <!-- 字体样式 -->
+    <Spinner
+        android:id="@+id/fontStyleSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:popupBackground="#000000"/>
+    <!-- 颜色选择 -->
+    <TextView
+        android:id="@+id/currentColorLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="当前颜色"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:padding="8dp"
+        android:layout_marginTop="16dp"/>
+
+    <!-- 当前选中的颜色显示区域 -->
+    <View
+        android:id="@+id/currentColorView"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#FFFFFF"
+        android:layout_marginTop="8dp"/>
+
+    <!-- 颜色小方块区域 -->
+    <GridLayout
+        android:id="@+id/commonColorsGridLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:columnCount="10"
+        android:rowCount="3"
+        android:horizontalSpacing="8dp"
+        android:verticalSpacing="8dp">
+
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FF0000" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#00FF00" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#0000FF" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FFFF00" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FF00FF" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#00FFFF" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#000000" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FFFFFF" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#888888" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FFA500" android:layout_columnWeight="1" />
+
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#800080" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#A52A2A" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#D2691E" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#8B4513" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#2E8B57" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#F08080" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#E6E6FA" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#7B68EE" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#00FA9A" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#D3D3D3" android:layout_columnWeight="1" />
+
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#F0E68C" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#98FB98" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FF6347" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FFD700" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#FFA500" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#800080" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#A52A2A" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#D2691E" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#8B4513" android:layout_columnWeight="1" />
+        <View android:layout_width="0dp" android:layout_height="32dp" android:background="#2E8B57" android:layout_columnWeight="1" />
+    </GridLayout>
+
+    <!-- 输入颜色值 -->
+    <LinearLayout
+        android:id="@+id/colorInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="输入颜色值:"
+            android:layout_marginEnd="8dp" />
+
+        <EditText
+            android:id="@+id/colorInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#2e8b57"
+            android:hint="#RRGGBB"
+
+            />
+
+        <Button
+            android:id="@+id/confirmColorButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="确定" />
+    </LinearLayout>
+
+    <!-- 确认按钮 -->
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="使用设置"
+        android:layout_marginTop="32dp" />
+
+</LinearLayout>

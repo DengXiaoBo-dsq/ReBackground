@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E1E"
+    android:padding="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="提取图片颜色"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 容差设置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="容差阈值 (0-255):"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="12dp"/>
+        <EditText
+            android:id="@+id/etThreshold"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="1"
+            android:textColor="#FFFFFF"
+            android:background="#DD333333"
+            android:padding="8dp"
+            android:textAlignment="center"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(0或1=精确匹配)"
+            android:textColor="#AAAAAA"
+            android:textSize="12sp"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
+    <!-- 缩放选项 -->
+    <CheckBox
+        android:id="@+id/cbUseThumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="启用缩放（长边>600时缩至600）"
+        android:textColor="#FFFFFF"
+        android:checked="true"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 提取按钮 -->
+    <Button
+        android:id="@+id/btnExtract"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="开始提取"
+        android:background="#FF9800"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 进度条 -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvProgressStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textAlignment="center"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 结果网格 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewColors"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="gone"/>
+
+    <!-- 创建收藏夹区域 -->
+    <LinearLayout
+        android:id="@+id/layoutCreateFavorite"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="8dp">
+        <EditText
+            android:id="@+id/etFolderName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="输入收藏夹名称"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#AAAAAA"
+            android:background="#DD333333"
+            android:padding="12dp"/>
+        <Button
+            android:id="@+id/btnCreateFavorite"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="创建收藏夹"
+            android:background="#FF9800"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="8dp"/>
+    </LinearLayout>
+</LinearLayout>

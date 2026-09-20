@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        // 如果需要 JCenter
+        gradlePluginPortal()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://chaquo.com/maven' }
+
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven { url 'https://jitpack.io' }
+        google()
+        mavenCentral()
+        mavenCentral()
+        maven { url "https://chaquo.com/maven" }
+
+    }
+}
+rootProject.name = "ReBackground"
+include ':app'
+

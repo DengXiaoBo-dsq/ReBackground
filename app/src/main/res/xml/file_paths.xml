@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 主项目原有：允许访问所有外部存储文件 -->
+    <external-path name="external_files" path="." />
+
+    <!-- RealSR 新增：允许访问缓存目录下的 realsr 子目录 -->
+    <cache-path name="cache" path="realsr" />
+
+    <!-- RealSR 新增：允许访问 DCIM/RealSR 目录（用于保存超分结果） -->
+    <external-path name="myFile" path="DCIM/RealSR" />
+</paths>

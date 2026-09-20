@@ -1,0 +1,44 @@
+# ---------- Android Studio / IntelliJ ----------
+*.iml
+.idea/
+.gradle/
+.gradle-task/
+build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.DS_Store
+
+# ---------- 根目录 build ----------
+/build
+
+# ---------- 所有模块的 build ----------
+**/build/
+
+# ---------- 临时 / 备份 ----------
+temp_frag/
+*.zip
+*.bak
+*.tmp
+*.hprof
+*.log
+
+# ---------- Gradle ----------
+.gradle/
+gradle-app.setting
+.gradletasknamecache
+
+# ---------- 系统 ----------
+Thumbs.db
+
+# ---------- AI Models (too large for git) ----------
+*.onnx
+*.pt
+*.pth
+*.tflite
+*.h5
+*.pb
+
+
+app/src/main/assets/realsr

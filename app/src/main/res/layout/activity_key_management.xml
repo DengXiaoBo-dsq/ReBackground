@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="密钥管理"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"
+    android:gravity="center" />
+
+    <!-- 密钥输入部分 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="请输入新密钥"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" /> <!-- 增加底部间隔 -->
+
+    <EditText
+        android:id="@+id/et_key_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="输入新密钥"
+        android:textColor="#ffffff"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+    android:inputType="text" />
+
+    <!-- 添加密钥按钮 -->
+    <Button
+        android:id="@+id/btn_add_key"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="添加密钥"
+        android:layout_marginBottom="16dp"
+    android:layout_marginTop="12dp" />  <!-- 增加顶部间隔 -->
+
+    <!-- 显示所有密钥按钮 -->
+    <Button
+        android:id="@+id/btn_view_all_keys"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="查看所有密钥"
+        android:layout_marginBottom="16dp"
+    android:layout_marginTop="12dp" />  <!-- 增加顶部间隔 -->
+
+    <!-- 选中密钥 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="选择一个密钥"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" /> <!-- 增加底部间隔 -->
+
+    <Spinner
+        android:id="@+id/spinner_keys"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="12dp"
+        android:textColor="@android:color/white"
+        android:popupBackground="#000000"/>
+
+    <!-- 使用选中密钥按钮 -->
+    <Button
+        android:id="@+id/btn_use_selected_key"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="使用选中密钥"
+        android:layout_marginBottom="16dp"
+    android:layout_marginTop="12dp" />  <!-- 增加顶部间隔 -->
+
+    <!-- 删除密钥按钮 -->
+    <Button
+        android:id="@+id/btn_delete_key"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="删除选中密钥"
+        android:layout_marginBottom="16dp"
+    android:layout_marginTop="12dp" />  <!-- 增加顶部间隔 -->
+
+    <!-- 去水印接口 URL 输入部分 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="请输入去水印接口 URL"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/et_watermark_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="输入去水印接口URL"
+        android:textColor="#ffffff"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+    android:inputType="textUri" />
+
+    <!-- 保存去水印接口 URL 按钮 -->
+    <Button
+        android:id="@+id/btn_save_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存URL"
+        android:layout_marginBottom="10dp"
+    android:layout_marginTop="12dp" />  <!-- 增加顶部间隔 -->
+
+</LinearLayout>

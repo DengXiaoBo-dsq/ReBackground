@@ -1,0 +1,102 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.chaquo.python'
+}
+
+android {
+    namespace 'com.dsq.rebackground'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.dsq.rebackground"
+        minSdk 24
+        targetSdk 28
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+        buildFeatures {
+            buildConfig true
+        }
+        python {
+            version "3.8"
+            buildPython "C:\\Users\\DSQ\\AppData\\Local\\Programs\\Python\\Python38\\python.exe"
+            pip {
+                install "opencv-contrib-python"
+                install "opencv-python"
+                install "numpy"
+                install "pillow>=5.2.2"
+                options("--extra-index-url", "https://pypi.tuna.tsinghua.edu.cn/simple")
+                options("--timeout", "200")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    // 锁定 AndroidX 核心库版本，兼容 AGP 8.0.0
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // 其他第三方库
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.15.1'
+
+    implementation 'org.pytorch:pytorch_android:1.12.2'
+    implementation ('org.pytorch:pytorch_android_torchvision:1.12.2') {
+        exclude group: 'org.pytorch', module: 'pytorch_android'
+    }
+
+    implementation 'com.facebook.soloader:soloader:0.10.5'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    // 超分相关
+    implementation ('org.tensorflow:tensorflow-lite:2.17.0') {
+        exclude group: 'org.tensorflow', module: 'tensorflow-lite-api'
+    }
+    implementation ('org.tensorflow:tensorflow-lite-support:0.4.4') {
+        exclude group: 'org.tensorflow', module: 'tensorflow-lite-api'
+    }
+    implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
+
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+
+
+}
+
+// 强制锁定版本，防止其他依赖传递高版本
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.appcompat:appcompat:1.6.1'
+        force 'androidx.core:core-ktx:1.12.0'
+        force 'androidx.core:core:1.12.0'
+        force 'androidx.appcompat:appcompat-resources:1.6.1'
+    }
+}

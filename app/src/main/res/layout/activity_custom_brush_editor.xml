@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E1E">
+
+    <!-- 工具栏 -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#2A2A2A"
+        android:title="绘制纹理"
+        android:titleTextColor="#FFFFFF"
+        app:navigationIcon="@drawable/ic_back"
+        app:navigationContentDescription="返回" />
+
+    <!-- 尺寸选择区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#333333"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="尺寸"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp" />
+
+        <Spinner
+            android:id="@+id/sizeSpinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/spinner_bg"
+            android:entries="@array/texture_size_options" />
+
+        <LinearLayout
+            android:id="@+id/customSizeLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/customWidthInput"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:hint="宽"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:background="@drawable/edittext_bg"
+                android:padding="4dp"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="×"
+                android:textColor="#FFFFFF"
+                android:layout_marginHorizontal="4dp" />
+
+            <EditText
+                android:id="@+id/customHeightInput"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:hint="高"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:background="@drawable/edittext_bg"
+                android:padding="4dp"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btnApplyCustomSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="应用"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#FF9800"
+                android:paddingHorizontal="8dp"
+                android:textSize="12sp"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 画笔选择区域 -->
+    <LinearLayout
+        android:id="@+id/brushSelector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#2A2A2A"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="选择画笔">
+
+        <ImageView
+            android:id="@+id/currentBrushIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_brush_default" />
+
+        <TextView
+            android:id="@+id/currentBrushName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="画笔"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:singleLine="true" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_arrow_drop_down"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- 画布区域（PR-2 Step 3：PaintGLSurfaceView 替代 ） -->
+    <FrameLayout
+        android:id="@+id/canvasFrame"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#000000">
+
+        <com.dsq.rebackground.paint.rendering.gl.PaintGLSurfaceView
+            android:id="@+id/paintGlSurface"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <!-- 底部工具条 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#2A2A2A"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="大小"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <SeekBar
+                android:id="@+id/sbSize"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="79"
+                android:progress="9"
+                android:thumbTint="#FF9800"
+                android:progressTint="#FF9800" />
+
+            <TextView
+                android:id="@+id/tvSizeValue"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:text="10"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="透明度"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <SeekBar
+                android:id="@+id/sbOpacity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="99"
+                android:progress="99"
+                android:thumbTint="#FF9800"
+                android:progressTint="#FF9800" />
+
+            <TextView
+                android:id="@+id/tvOpacityValue"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:text="1.00"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="4dp">
+
+            <ImageButton
+                android:id="@+id/btnUndo"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_undo"
+                android:background="@android:color/transparent"
+                android:tint="#FFFFFF"
+                android:contentDescription="撤销" />
+
+            <ImageButton
+                android:id="@+id/btnRedo"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_redo"
+                android:background="@android:color/transparent"
+                android:tint="#FFFFFF"
+                android:contentDescription="重做"
+                android:layout_marginStart="8dp" />
+
+            <ImageButton
+                android:id="@+id/btnClear"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_clear"
+                android:background="@android:color/transparent"
+                android:tint="#FFFFFF"
+                android:contentDescription="清空"
+                android:layout_marginStart="8dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="60dp"
+                android:text="取消"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#555555" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="60dp"
+                android:layout_marginStart="8dp"
+                android:text="保存"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#FF9800" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

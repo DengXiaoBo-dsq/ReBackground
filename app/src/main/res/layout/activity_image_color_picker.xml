@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/parentLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E1E"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="图片取色"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 图片显示区域 -->
+    <com.dsq.rebackground.ui.colorpicker.ColorPickerView
+        android:id="@+id/imagePickerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 当前颜色预览和数值 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前颜色"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp"/>
+        <View
+            android:id="@+id/imgColorPreview"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="#FFFFFFFF"
+            android:layout_marginEnd="12dp"/>
+        <TextView
+            android:id="@+id/imgHexText"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="#FFFFFFFF"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="monospace"/>
+    </LinearLayout>
+
+    <!-- 提取按钮 -->
+    <Button
+        android:id="@+id/btnExtract"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="提取颜色"
+        android:background="#FF9800"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 进度条和状态 -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp"/>
+    <TextView
+        android:id="@+id/tvProgressStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textAlignment="center"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 颜色数量显示 -->
+    <TextView
+        android:id="@+id/tvColorCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- 提取结果网格 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewExtracted"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.5"
+        android:visibility="gone"/>
+
+    <!-- 创建收藏夹按钮 -->
+    <Button
+        android:id="@+id/btnCreateFavorite"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="创建收藏夹"
+        android:background="#FF9800"
+        android:textColor="#FFFFFF"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"/>
+
+    <!-- 确定/取消 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        <Button
+            android:id="@+id/btnCancelImg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="取消"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp"/>
+        <Button
+            android:id="@+id/btnConfirmImg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="确定"
+            android:background="#333333"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+</LinearLayout>

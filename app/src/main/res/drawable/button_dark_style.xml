@@ -1,0 +1,19 @@
+<!-- res/drawable/button_dark_style.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 默认状态 -->
+    <item android:state_pressed="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#424242" /> <!-- 暗灰色 -->
+            <corners android:radius="8dp" /> <!-- 圆角 -->
+            <stroke android:width="1dp" android:color="#616161" /> <!-- 边框 -->
+        </shape>
+    </item>
+    <!-- 按下状态 -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#616161" /> <!-- 更亮的灰色 -->
+            <corners android:radius="8dp" />
+            <stroke android:width="1dp" android:color="#757575" />
+        </shape>
+    </item>
+</selector>
