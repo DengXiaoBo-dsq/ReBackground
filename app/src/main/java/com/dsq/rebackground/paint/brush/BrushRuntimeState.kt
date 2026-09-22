@@ -6,5 +6,12 @@ import com.dsq.rebackground.paint.math.Vec2
 data class BrushRuntimeState(
     val lastPosition: Vec2? = null,
     val lastTimestampMillis: Long? = null,
-    val speedDocumentUnitsPerSecond: Float = 0f
+    val speedDocumentUnitsPerSecond: Float = 0f,
+    val smoothedSpeedDocumentUnitsPerSecond: Float = speedDocumentUnitsPerSecond,
+    val lastDiameterDocumentUnits: Float? = null,
+    val lastAspectRatio: Float? = null,
+    val lastRotationRadians: Float? = null,
+    val lastOpacityFactor: Float = 1f,
+    val lastFlowFactor: Float = 1f,
+    val dryLoad: Float? = null,
 )

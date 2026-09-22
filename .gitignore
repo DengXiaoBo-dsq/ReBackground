@@ -42,3 +42,8 @@ Thumbs.db
 
 
 app/src/main/assets/realsr
+
+.gradle-user/
+.java-home/
+evidence/
+uncommitted/

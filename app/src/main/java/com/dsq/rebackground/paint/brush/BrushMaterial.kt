@@ -17,7 +17,12 @@ data class BrushMaterial(
     val fixedRotationDegrees: Float = 0f,
     val humidityResponse: Float = 0f,
     val bristleDensity: Float = 0f,
-    val paperGrainAffinity: Float = 0f
+    val paperGrainAffinity: Float = 0f,
+    val initialDryLoad: Float = 1f,
+    val dryDepletionRate: Float = 0f,
+    val dryRechargeRate: Float = 0f,
+    val drySpeedDepletionInfluence: Float = 0f,
+    val bristleSeed: Int = 0,
 ) {
     init {
         require(spacingRatio.isFinite() && spacingRatio > 0f)
@@ -28,5 +33,12 @@ data class BrushMaterial(
         require(humidityResponse.isFinite() && humidityResponse in 0f..1f)
         require(bristleDensity.isFinite() && bristleDensity in 0f..1f)
         require(paperGrainAffinity.isFinite() && paperGrainAffinity in 0f..1f)
+        require(initialDryLoad.isFinite() && initialDryLoad in 0f..1f)
+        require(dryDepletionRate.isFinite() && dryDepletionRate >= 0f)
+        require(dryRechargeRate.isFinite() && dryRechargeRate >= 0f)
+        require(drySpeedDepletionInfluence.isFinite() && drySpeedDepletionInfluence in 0f..1f)
     }
+
+    val hasDryResponse: Boolean
+        get() = dryDepletionRate > 0f || bristleDensity > 0f || paperGrainAffinity > 0f
 }

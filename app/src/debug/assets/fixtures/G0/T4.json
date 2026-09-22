@@ -1,0 +1,28 @@
+{
+  "id": "T4",
+  "canvasWidth": 1024,
+  "canvasHeight": 1024,
+  "seed": 4,
+  "timestampStepMs": 4,
+  "idleWaitMs": 0,
+  "segments": [
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[400,512],[440,512],[480,512],[520,512],[560,512],[600,512],[620,512]]
+    },
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[400,512],[440,512],[480,512],[520,512],[560,512],[600,512],[620,512]]
+    },
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[400,512],[440,512],[480,512],[520,512],[560,512],[600,512],[620,512]]
+    }
+  ],
+  "expected": {
+    "roiX": 510, "roiY": 512, "roiW": 20, "roiH": 20,
+    "monotonicDecreasing": true,
+    "metric": "luminance",
+    "minDiffBetweenSegments": 1
+  }
+}

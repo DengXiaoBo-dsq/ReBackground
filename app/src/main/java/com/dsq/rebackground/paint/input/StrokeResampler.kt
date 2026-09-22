@@ -11,21 +11,46 @@ class StrokeResampler(private val config: ResamplingConfig = ResamplingConfig())
     private val interpolator = StrokeInterpolator()
     private var lastInput: StrokePoint? = null
     private var lastEmitted: StrokePoint? = null
+    private var distanceUntilNext = config.spacingDocumentUnits
 
-    fun reset() { lastInput = null; lastEmitted = null }
+    fun reset() {
+        lastInput = null
+        lastEmitted = null
+        distanceUntilNext = config.spacingDocumentUnits
+    }
+
     fun add(point: StrokePoint): List<StrokePoint> {
         val previous = lastInput
-        if (previous == null) { lastInput = point; lastEmitted = point; return listOf(point) }
+        if (previous == null) {
+            lastInput = point
+            lastEmitted = point
+            distanceUntilNext = config.spacingDocumentUnits
+            return listOf(point)
+        }
         if (point.timestampMillis < previous.timestampMillis) return emptyList()
         lastInput = point
         val result = ArrayList<StrokePoint>()
-        val start = lastEmitted ?: previous
-        val distance = start.position.distanceTo(point.position)
-        val elapsed = point.timestampMillis - start.timestampMillis
-        if (distance >= config.spacingDocumentUnits || elapsed >= config.maximumIntervalMillis) {
-            val spacing = if (distance == 0f) 1 else kotlin.math.ceil(distance / config.spacingDocumentUnits).toInt()
-            for (index in 1..spacing) result += interpolator.pointAt(start, point, index.toFloat() / spacing)
+
+        val segmentLength = previous.position.distanceTo(point.position)
+        var consumed = 0f
+        while (segmentLength - consumed + 1e-5f >= distanceUntilNext) {
+            consumed += distanceUntilNext
+            val amount = if (segmentLength == 0f) 1f else (consumed / segmentLength).coerceIn(0f, 1f)
+            val emitted = interpolator.pointAt(previous, point, amount)
+            if (!sameDynamicsAndPosition(lastEmitted ?: previous, emitted)) {
+                result += emitted
+                lastEmitted = emitted
+            }
+            distanceUntilNext = config.spacingDocumentUnits
+        }
+        distanceUntilNext -= (segmentLength - consumed).coerceAtLeast(0f)
+
+        val emitted = lastEmitted
+        if (result.isEmpty() && emitted != null &&
+            point.timestampMillis - emitted.timestampMillis >= config.maximumIntervalMillis) {
+            result += point
             lastEmitted = point
+            distanceUntilNext = config.spacingDocumentUnits
         }
         return result
     }
@@ -33,7 +58,11 @@ class StrokeResampler(private val config: ResamplingConfig = ResamplingConfig())
     fun finish(point: StrokePoint): List<StrokePoint> {
         val emitted = add(point).toMutableList()
         val last = lastEmitted
-        if (last == null || !sameDynamicsAndPosition(last, point)) { emitted += point; lastEmitted = point }
+        if (last == null || !sameDynamicsAndPosition(last, point)) {
+            emitted += point
+            lastEmitted = point
+            distanceUntilNext = config.spacingDocumentUnits
+        }
         return emitted
     }
 

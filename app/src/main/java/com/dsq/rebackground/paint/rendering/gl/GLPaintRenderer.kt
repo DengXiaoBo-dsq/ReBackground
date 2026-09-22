@@ -125,7 +125,7 @@ class GLPaintRenderer(
     // 定位完问题后请把 DEBUG_PROBE 改为 false，避免影响性能
     // ============================================================
     private val PROBE_TAG = "PIGMENT_PROBE"
-    private val DEBUG_PROBE = true
+    private val DEBUG_PROBE = false
 
     // ============================================================
     // [MOD 2026-09-10 v3] 全局 Beer-Lambert 吸收斜率
@@ -150,12 +150,14 @@ class GLPaintRenderer(
     val context = GLContext()
     private val stateCache = GLStateCache()
     private val pendingStamps = AtomicReference<List<ColoredBrushStamp>>(emptyList())
+    private val pendingDocumentSize = AtomicReference<Pair<Int, Int>?>(null)
     private val endStrokeRequested = AtomicBoolean(false)
     // [MOD PR-2.6] cancel 请求：丢弃当前笔，不 flush 到 pigment
     private val cancelStrokeRequested = AtomicBoolean(false)
     private val clearRequested = AtomicBoolean(false)
     @Volatile private var pendingBrushTextures: Map<String, Bitmap>? = null
     private val brushTextureHandles = HashMap<String, Int>()
+    private val brushTextureSizes = HashMap<String, Pair<Int, Int>>()
     // ============================================================
     // [MOD PR-2.7] 纹理 alpha 均值缓存（key = texturePath）
     //   用于 brush_stamp.frag 归一化：纹理 = 质感调制
@@ -224,6 +226,9 @@ class GLPaintRenderer(
     // ============================================================
 
     private var shouldScanPurple = false
+    @Volatile private var lastFrameTimeMs = 0f
+    @Volatile private var lastRenderGlError = GLES20.GL_NO_ERROR
+    private var observedFrameGlError = GLES20.GL_NO_ERROR
     // ============================================================
 
     // ============================================================
@@ -250,6 +255,9 @@ class GLPaintRenderer(
     @Volatile private var brushAlpha = 1f
     // [MOD 2026-09-11] 笔内覆盖度上限（0~1）
     @Volatile private var strokeOpacityLimit = 1f
+    @Volatile private var dryPaperHeightAmplitude = 0.5f
+    @Volatile private var dryPaperGrainScale = 1f
+    @Volatile private var dryPaperSeed = 0
     @Volatile private var viewScale = 1f
     @Volatile private var viewOffsetX = 0f
     @Volatile private var viewOffsetY = 0f
@@ -262,6 +270,9 @@ class GLPaintRenderer(
         val fbo = IntArray(1)
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, fbo, 0)
         val err = GLES20.glGetError()
+        if (err != GLES20.GL_NO_ERROR && observedFrameGlError == GLES20.GL_NO_ERROR) {
+            observedFrameGlError = err
+        }
         Log.d("GLPaintRenderer",
             "[$tag] viewport=[${vp[0]},${vp[1]} ${vp[2]}x${vp[3]}] fbo=${fbo[0]} " +
                     "doc=${documentWidth}x${documentHeight} ctx=${context.width}x${context.height} " +
@@ -797,7 +808,13 @@ class GLPaintRenderer(
     // ============================================================
 
     override fun renderFrame() {
+        val frameStartNanos = System.nanoTime()
+        observedFrameGlError = GLES20.GL_NO_ERROR
         context.requireReady()
+        pendingDocumentSize.getAndSet(null)?.let { (width, height) ->
+            documentWidth = width
+            documentHeight = height
+        }
         logGlState("renderFrame START")
         ensureCanvasResources()
         ensureOffscreenResources()
@@ -827,25 +844,21 @@ class GLPaintRenderer(
                 pendingBackgroundBitmap = null
             }
 
-            // ============================================================
-            // [MOD PR-2.6] 先处理 cancel，再处理 end
-            //   cancel 优先：多指操作时丢弃当前笔
-            // ============================================================
+            // Cancel discards pending input. A normal end must consume the
+            // pending batch first, then flush that same stroke. Doing this in
+            // the opposite order loses fast DOWN/MOVE/UP sequences.
             val wasCancelStroke = cancelStrokeRequested.getAndSet(false)
             if (wasCancelStroke) {
                 cancelStrokeInternal()
             }
 
             val wasEndStroke = endStrokeRequested.getAndSet(false)
-            val strokeWasActive = strokeActive
-
-            if (wasEndStroke && strokeWasActive) {
-                endStrokeInternal()
-                shouldScanPurple = true
+            val batch = if (wasCancelStroke) {
+                pendingStamps.set(emptyList())
+                emptyList()
+            } else {
+                pendingStamps.getAndSet(emptyList())
             }
-
-            val batch = if ((wasEndStroke && strokeWasActive) || wasCancelStroke) emptyList()
-            else pendingStamps.getAndSet(emptyList())
             // ============================================================
             // [DEBUG PROBE] hasNewStamp 用于控制本帧是否打探针
             // 静止时 batch 为空 → hasNewStamp=false → 探针不执行 → 日志不刷屏
@@ -860,6 +873,10 @@ class GLPaintRenderer(
                 stateCache.bindFramebuffer(strokeFramebuffer.handle)
                 if (documentWidth > 0 && documentHeight > 0) stateCache.viewport(documentWidth, documentHeight)
                 drawBrushStampBatchToStroke(batch)
+            }
+            if (wasEndStroke && strokeActive) {
+                endStrokeInternal()
+                shouldScanPurple = DEBUG_PROBE
             }
             // ============================================================
 
@@ -970,7 +987,20 @@ class GLPaintRenderer(
             GLES20.glClearColor(clearRed, clearGreen, clearBlue, clearAlpha)  // 恢复
         }
         renderGraph.ordered().forEach { _ -> Unit }
+        val trailingError = GLES20.glGetError()
+        if (trailingError != GLES20.GL_NO_ERROR && observedFrameGlError == GLES20.GL_NO_ERROR) {
+            observedFrameGlError = trailingError
+        }
+        lastRenderGlError = observedFrameGlError
+        lastFrameTimeMs = (System.nanoTime() - frameStartNanos) / 1_000_000f
     }
+
+    /** Snapshot taken on the GL thread immediately after the captured frame. */
+    fun debugRenderMetrics(): Map<String, Any> = mapOf(
+        "frameTime" to lastFrameTimeMs,
+        "frameTimeMs" to lastFrameTimeMs,
+        "glError" to lastRenderGlError
+    )
 
     // ============================================================
     // [MOD PR-2.1] 把 Bitmap 缩放到文档尺寸，覆盖 canvas FBO
@@ -1135,6 +1165,14 @@ class GLPaintRenderer(
     fun setStrokeFlow(flow: Float) {
         currentStrokeFlow = flow.coerceIn(0f, 1f)
     }
+
+    fun setDryPaper(heightAmplitude: Float, grainScale: Float, seed: Int = 0) {
+        require(heightAmplitude.isFinite() && heightAmplitude in 0f..1f)
+        require(grainScale.isFinite() && grainScale > 0f)
+        dryPaperHeightAmplitude = heightAmplitude
+        dryPaperGrainScale = grainScale
+        dryPaperSeed = seed
+    }
     // ============================================================
 
     // ============================================================
@@ -1209,11 +1247,55 @@ class GLPaintRenderer(
         clearRequested.set(true)
     }
 
+    /** Debug/acceptance hook: returns the linear RGBA16F stroke target in top-left row order. */
+    fun captureStrokeRgbaForTest(): FloatArray? {
+        context.requireReady()
+        val framebuffer = strokeFramebuffer ?: return null
+        stateCache.bindFramebuffer(framebuffer.handle)
+        stateCache.viewport(documentWidth, documentHeight)
+        val raw = java.nio.ByteBuffer
+            .allocateDirect(documentWidth * documentHeight * 4 * Short.SIZE_BYTES)
+            .order(java.nio.ByteOrder.nativeOrder())
+            .asShortBuffer()
+        GLES30.glReadPixels(
+            0,
+            0,
+            documentWidth,
+            documentHeight,
+            GLES30.GL_RGBA,
+            GLES30.GL_HALF_FLOAT,
+            raw,
+        )
+        if (GLES30.glGetError() != GLES30.GL_NO_ERROR) return null
+        val result = FloatArray(documentWidth * documentHeight * 4)
+        for (topY in 0 until documentHeight) {
+            val glY = documentHeight - 1 - topY
+            raw.position(glY * documentWidth * 4)
+            val targetOffset = topY * documentWidth * 4
+            for (component in 0 until documentWidth * 4) {
+                result[targetOffset + component] = halfToFloat(raw.get())
+            }
+        }
+        raw.position(0)
+        return result
+    }
+
+    private fun halfToFloat(bits: Short): Float {
+        val value = bits.toInt() and 0xffff
+        val sign = if ((value and 0x8000) == 0) 1f else -1f
+        val exponent = (value ushr 10) and 0x1f
+        val fraction = value and 0x03ff
+        return when (exponent) {
+            0 -> sign * Math.scalb(fraction.toFloat(), -24)
+            0x1f -> if (fraction == 0) sign * Float.POSITIVE_INFINITY else Float.NaN
+            else -> sign * Math.scalb(1f + fraction / 1024f, exponent - 15)
+        }
+    }
+
     fun setDocumentSize(width: Int, height: Int) {
         require(width > 0 && height > 0)
         Log.d("GLPaintRenderer", "setDocumentSize $width x $height")
-        documentWidth = width
-        documentHeight = height
+        pendingDocumentSize.set(width to height)
     }
 
     /**
@@ -1338,6 +1420,23 @@ class GLPaintRenderer(
         val color = GLES20.glGetUniformLocation(shader.program, "uColor")
         val texture = GLES20.glGetUniformLocation(shader.program, "uBrushTexture")
         val useTexture = GLES20.glGetUniformLocation(shader.program, "uUseTexture")
+        val textureSamplingMode = GLES20.glGetUniformLocation(shader.program, "uTextureSamplingMode")
+        val textureSize = GLES20.glGetUniformLocation(shader.program, "uTextureSize")
+        val grainTexture = GLES20.glGetUniformLocation(shader.program, "uGrainTexture")
+        val useGrain = GLES20.glGetUniformLocation(shader.program, "uUseGrain")
+        val grainTextureSize = GLES20.glGetUniformLocation(shader.program, "uGrainTextureSize")
+        val grainScale = GLES20.glGetUniformLocation(shader.program, "uGrainScaleDocumentUnitsPerTexel")
+        val grainPhase = GLES20.glGetUniformLocation(shader.program, "uGrainPhaseTexels")
+        val grainRotation = GLES20.glGetUniformLocation(shader.program, "uGrainRotationRadians")
+        val grainDepth = GLES20.glGetUniformLocation(shader.program, "uGrainDepth")
+        val dryLoadLoc = GLES20.glGetUniformLocation(shader.program, "uDryLoad")
+        val dryArcLoc = GLES20.glGetUniformLocation(shader.program, "uDryArcLength")
+        val bristleDensityLoc = GLES20.glGetUniformLocation(shader.program, "uBristleDensity")
+        val paperAffinityLoc = GLES20.glGetUniformLocation(shader.program, "uPaperAffinity")
+        val paperAmplitudeLoc = GLES20.glGetUniformLocation(shader.program, "uPaperHeightAmplitude")
+        val paperScaleLoc = GLES20.glGetUniformLocation(shader.program, "uPaperGrainScale")
+        val drySeedLoc = GLES20.glGetUniformLocation(shader.program, "uDrySeed")
+        val dryPressureLoc = GLES20.glGetUniformLocation(shader.program, "uDryPressure")
         val flowLoc = GLES20.glGetUniformLocation(shader.program, "uFlow")
         // [MOD PR-2.7] 纹理 alpha 均值
         val meanLoc = GLES20.glGetUniformLocation(shader.program, "uTextureAlphaMean")
@@ -1360,21 +1459,63 @@ class GLPaintRenderer(
         batch.forEach { colored ->
             val stamp = colored.stamp
             val textureHandle = stamp.textureResourceKey?.let { brushTextureHandles[it] } ?: 0
+            val grainHandle = stamp.grainResourceKey?.let { brushTextureHandles[it] } ?: 0
             if (textureHandle != 0) {
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle)
                 GLES20.glUniform1i(texture, 0)
                 GLES20.glUniform1f(useTexture, 1f)
+                GLES20.glUniform1f(textureSamplingMode, stamp.textureSamplingMode.ordinal.toFloat())
+                val dimensions = brushTextureSizes[stamp.textureResourceKey]
+                GLES20.glUniform2f(
+                    textureSize,
+                    dimensions?.first?.toFloat() ?: 1f,
+                    dimensions?.second?.toFloat() ?: 1f,
+                )
             } else {
                 GLES20.glUniform1f(useTexture, 0f)
+                GLES20.glUniform1f(textureSamplingMode, 0f)
+            }
+            if (grainHandle != 0) {
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, grainHandle)
+                GLES20.glUniform1i(grainTexture, 1)
+                GLES20.glUniform1f(useGrain, 1f)
+                val grainDimensions = brushTextureSizes[stamp.grainResourceKey]
+                GLES20.glUniform2f(
+                    grainTextureSize,
+                    grainDimensions?.first?.toFloat() ?: 1f,
+                    grainDimensions?.second?.toFloat() ?: 1f,
+                )
+                GLES20.glUniform1f(grainScale, stamp.grainScaleDocumentUnitsPerTexel)
+                GLES20.glUniform1f(grainPhase, stamp.grainPhaseTexels)
+                GLES20.glUniform1f(grainRotation, stamp.grainRotationRadians)
+                GLES20.glUniform1f(grainDepth, stamp.grainDepth)
+            } else {
+                GLES20.glUniform1f(useGrain, 0f)
             }
             GLES20.glUniform2f(center, stamp.center.x, stamp.center.y)
+            val effectiveAspect =
+                if (stamp.textureSamplingMode == com.dsq.rebackground.paint.brush.BrushTextureSamplingMode.SOURCE_RGBA) {
+                    brushTextureSizes[stamp.textureResourceKey]?.let { it.first.toFloat() / it.second.toFloat() }
+                        ?: stamp.aspectRatio
+                } else {
+                    stamp.aspectRatio
+                }
             GLES20.glUniform2f(
                 extent,
-                stamp.diameterDocumentUnits / 2f,
-                stamp.diameterDocumentUnits / stamp.aspectRatio / 2f
+                stamp.diameterDocumentUnits * effectiveAspect / 2f,
+                stamp.diameterDocumentUnits / 2f
             )
             GLES20.glUniform1f(rotation, stamp.rotationRadians)
+            GLES20.glUniform1f(dryLoadLoc, stamp.dryLoad)
+            GLES20.glUniform1f(dryArcLoc, stamp.dryArcLengthDocumentUnits)
+            GLES20.glUniform1f(bristleDensityLoc, stamp.bristleDensity)
+            GLES20.glUniform1f(paperAffinityLoc, stamp.paperGrainAffinity)
+            GLES20.glUniform1f(paperAmplitudeLoc, dryPaperHeightAmplitude)
+            GLES20.glUniform1f(paperScaleLoc, dryPaperGrainScale)
+            GLES20.glUniform1f(drySeedLoc, (dryPaperSeed + stamp.bristleSeed).toFloat())
+            GLES20.glUniform1f(dryPressureLoc, stamp.dryPressure)
             GLES20.glUniform4f(color, colored.red, colored.green, colored.blue, colored.alpha)
             if (flowLoc != -1) {
                 GLES20.glUniform1f(flowLoc, colored.flow)
@@ -1986,6 +2127,7 @@ class GLPaintRenderer(
                 Log.d("GLPaintRenderer", "uploadBrushTexturesIfNeeded DELETE key=$key handle=$handle")
                 GLES20.glDeleteTextures(1, intArrayOf(handle), 0)
             }
+            brushTextureSizes.remove(key)
         }
 
         textures.forEach { (key, bitmap) ->
@@ -1994,6 +2136,7 @@ class GLPaintRenderer(
                 GLES20.glDeleteTextures(1, intArrayOf(old), 0)
             }
             brushTextureHandles[key] = createBrushTexture(bitmap)
+            brushTextureSizes[key] = bitmap.width to bitmap.height
             // ============================================================
             // [MOD PR-2.7] 同时计算 alpha 均值
             // ============================================================
@@ -2030,6 +2173,7 @@ class GLPaintRenderer(
             GLES20.glDeleteTextures(1, intArrayOf(handle), 0)
         }
         brushTextureHandles.clear()
+        brushTextureSizes.clear()
         // [MOD PR-2.7] 清理 alpha 均值缓存
         brushTextureAlphaMeans.clear()
         if (mixboxLutHandle != 0) {

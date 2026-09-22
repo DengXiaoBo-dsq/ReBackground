@@ -1,0 +1,26 @@
+{
+  "id": "T7",
+  "canvasWidth": 1024,
+  "canvasHeight": 1024,
+  "seed": 7,
+  "timestampStepMs": 4,
+  "idleWaitMs": 0,
+  "segments": [
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[200,300],[240,300],[280,300],[320,300],[360,300],[400,300]]
+    },
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[500,700],[540,700],[580,700],[620,700],[660,700],[700,700]]
+    }
+  ],
+  "expected": {
+    "lifecycle": {
+      "begin": 2,
+      "finish": 2,
+      "active": 0,
+      "cancel": 0
+    }
+  }
+}

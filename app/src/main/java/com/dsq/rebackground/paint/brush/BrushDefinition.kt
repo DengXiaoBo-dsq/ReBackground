@@ -9,7 +9,8 @@ data class BrushDefinition(
     val material: BrushMaterial = BrushMaterial(),
     val dynamics: BrushDynamics = BrushDynamics(),
     val opacity: Float = 1f,
-    val flow: Float = 1f
+    val flow: Float = 1f,
+    val grain: GrainSource = GrainSource.None,
 ) {
     init {
         require(id.isNotBlank())

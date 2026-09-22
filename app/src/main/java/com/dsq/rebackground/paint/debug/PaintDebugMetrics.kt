@@ -3,20 +3,8 @@ package com.dsq.rebackground.paint.debug
 import android.util.Log
 import com.dsq.rebackground.paint.brush.BrushStamp
 import com.dsq.rebackground.paint.stroke.StrokePoint
+import kotlin.math.abs
 
-/**
- * G0 最小可观测性组件。
- *
- * 职责分工：
- * - BrushGenerator.generate        → stampCount++（每笔开始清零）
- * - PaintEngineController          → strokeId / pointCount / strokeLength / 生命周期
- * - PaintDebugMetrics              → 数据聚合与单次输出
- *
- * 不做 GPU 读取，不做 Reference Sampler，不做 Golden Test。
- * 不修改现有 Log.d / Log.w 调用。
- *
- * 输出：单条 Logcat 日志，tag = PAINT_METRIC
- */
 class PaintDebugMetrics {
 
     private var strokeId: Long = 0L
@@ -38,6 +26,22 @@ class PaintDebugMetrics {
 
     private var multiTouchCancelled: Boolean = false
 
+    private var documentOobCount: Int = 0
+    private var unexpectedOobCount: Int = 0
+    private var expectedTextureDiscardCount: Int = 0
+    private var angleWrapCorrectionCount: Int = 0
+
+    // [G0] Batch 2: 跨笔累计，不随 beginStroke 清零
+    private var strokeBeginCount: Int = 0
+    private var strokeFinishCount: Int = 0
+    private var activeStrokeCount: Int = 0
+    private var multiTouchCancelCount: Int = 0
+
+    // [G1] angle delta 统计
+    private val angleDeltas: MutableList<Float> = mutableListOf()
+    private var angleDeltaSum: Float = 0f
+    private var angleDeltaMax: Float = 0f
+
     fun beginStroke(id: Long) {
         strokeId = id
         startMs = System.currentTimeMillis()
@@ -52,20 +56,93 @@ class PaintDebugMetrics {
         nanCount = 0
         infCount = 0
         multiTouchCancelled = false
+        documentOobCount = 0
+        unexpectedOobCount = 0
+        expectedTextureDiscardCount = 0
+        angleWrapCorrectionCount = 0
+        angleDeltas.clear()
+        angleDeltaSum = 0f
+        angleDeltaMax = 0f
+        // [G0] Batch 2 累计
+        strokeBeginCount++
+        activeStrokeCount++
+    }
+    fun markOobPoint() { oobPointCount++ }
+
+    fun markDocumentOob() { documentOobCount++ }
+
+    fun markUnexpectedOob() { unexpectedOobCount++ }
+
+    fun markExpectedTextureDiscard() { expectedTextureDiscardCount++ }
+
+    fun onAngleRawDelta(rawDelta: Float) {
+        if (rawDelta > Math.PI.toFloat() || rawDelta < -Math.PI.toFloat()) {
+            angleWrapCorrectionCount++
+        }
     }
 
-    fun markOobPoint() { oobPointCount++ }
+    fun snapshot(): Map<String, Any> = mapOf(
+        "strokeId" to strokeId,
+        "points" to pointCount,
+        "stamps" to interpolatedStampCount,
+        "interp" to interpolatedStampCount,
+        "oob" to oobPointCount,
+        "documentOob" to documentOobCount,
+        "unexpectedOob" to unexpectedOobCount,
+        "expectedTextureDiscard" to expectedTextureDiscardCount,
+        "jump" to largeJumpCount,
+        "length" to strokeLength,
+        "diameterMin" to (if (minDiameter == Float.MAX_VALUE) 0f else minDiameter),
+        "diameterMax" to maxDiameter,
+        "nan" to nanCount,
+        "inf" to infCount,
+        "angleWrapCorrection" to angleWrapCorrectionCount,
+        "angleMean" to (if (angleDeltas.isEmpty()) 0f else angleDeltaSum / angleDeltas.size),
+        "angleMax" to angleDeltaMax,
+        "angleP99" to (if (angleDeltas.isEmpty()) 0f else {
+            val s = angleDeltas.sorted()
+            s[((s.size - 1) * 0.99f).toInt().coerceIn(0, s.size - 1)]
+        })
+    )
+
+
+    fun markStrokeFinished() {
+        strokeFinishCount++
+        activeStrokeCount = (activeStrokeCount - 1).coerceAtLeast(0)
+    }
+
+    fun markMultiTouchCancel() {
+        multiTouchCancelCount++
+        activeStrokeCount = (activeStrokeCount - 1).coerceAtLeast(0)
+    }
+
+    fun resetLifecycleCounters() {
+        strokeBeginCount = 0
+        strokeFinishCount = 0
+        activeStrokeCount = 0
+        multiTouchCancelCount = 0
+    }
+
+    fun lifecycleSnapshot(): Map<String, Int> = mapOf(
+        "begin" to strokeBeginCount,
+        "finish" to strokeFinishCount,
+        "active" to activeStrokeCount,
+        "cancel" to multiTouchCancelCount
+    )
 
     fun markMultiTouchCancelled() { multiTouchCancelled = true }
 
     /**
-     * 记录一次有效 stroke point。
-     *
-     * @param point     已归一化的 StrokePoint
-     * @param stamp     BrushGenerator 输出
-     * @param interp    本点与上一点之间自动插入的 stamp 数
-     * @param largeJump 是否触发 MAX_STROKE_JUMP
+     * [G1] 记录一次 StrokeFrameBuilder 产生的角度增量。
+     * 传入的 delta 为 unwrappedAngle 差值，可正可负；内部取绝对值。
      */
+    fun onAngleDelta(delta: Float) {
+        val a = abs(delta)
+        angleDeltas.add(a)
+        angleDeltaSum += a
+        if (a > angleDeltaMax) angleDeltaMax = a
+    }
+
     fun onPoint(
         point: StrokePoint,
         stamp: BrushStamp,
@@ -95,15 +172,18 @@ class PaintDebugMetrics {
         }
     }
 
-    /**
-     * 输出单条 PAINT_METRIC 日志。
-     *
-     * @param generatorStampCount 由 BrushGenerator.strokeStampCount 传入
-     */
     fun endStrokeAndLog(generatorStampCount: Int) {
         val durationMs = (System.currentTimeMillis() - startMs).coerceAtLeast(0L)
         val dMin = if (minDiameter == Float.MAX_VALUE) 0f else minDiameter
         val totalStamps = generatorStampCount + interpolatedStampCount
+
+        val angleMean = if (angleDeltas.isEmpty()) 0f else angleDeltaSum / angleDeltas.size
+        val angleMax = angleDeltaMax
+        val angleP99 = if (angleDeltas.isEmpty()) 0f else {
+            val sorted = angleDeltas.sorted()
+            val idx = ((sorted.size - 1) * 0.99f).toInt().coerceIn(0, sorted.size - 1)
+            sorted[idx]
+        }
 
         Log.d(
             TAG,
@@ -115,7 +195,8 @@ class PaintDebugMetrics {
                     "diameterMin=$dMin diameterMax=$maxDiameter " +
                     "durationMs=$durationMs " +
                     "multiTouchCancelled=$multiTouchCancelled " +
-                    "nan=$nanCount inf=$infCount"
+                    "nan=$nanCount inf=$infCount " +
+                    "angleMean=$angleMean angleMax=$angleMax angleP99=$angleP99"
         )
     }
 

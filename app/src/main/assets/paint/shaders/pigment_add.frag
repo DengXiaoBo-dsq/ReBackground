@@ -37,5 +37,15 @@ void main() {
 
     vec3 mixedColor = mixbox_lerp(oldPig.rgb, strokeColor, t);
 
+    // Repeated deposits of the same pigment increase optical density even when
+    // coverage is already one. Without this, the first opaque pass saturates
+    // alpha and every later pass becomes a pixel-identical no-op.
+    float oldScale = max(max(oldPig.r, oldPig.g), max(oldPig.b, 1e-4));
+    float strokeScale = max(max(strokeColor.r, strokeColor.g), max(strokeColor.b, 1e-4));
+    vec3 oldHue = oldPig.rgb / oldScale;
+    vec3 strokeHue = strokeColor / strokeScale;
+    float samePigment = 1.0 - step(0.02, length(oldHue - strokeHue));
+    mixedColor *= 1.0 - 0.10 * samePigment * strokeCoverage;
+
     gl_FragColor = vec4(mixedColor, newCoverage);
 }

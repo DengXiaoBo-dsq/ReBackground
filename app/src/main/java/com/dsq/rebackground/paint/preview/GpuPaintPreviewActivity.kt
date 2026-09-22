@@ -8,6 +8,7 @@ import com.dsq.rebackground.paint.brush.BrushGenerator
 import com.dsq.rebackground.paint.brush.BrushRuntimeState
 import com.dsq.rebackground.paint.input.PointerInputProcessor
 import com.dsq.rebackground.paint.rendering.gl.PaintGLSurfaceView
+import com.dsq.rebackground.paint.stroke.StrokeFrameBuilder
 import com.dsq.rebackground.paint.stroke.StrokePoint
 
 /**
@@ -19,6 +20,7 @@ class GpuPaintPreviewActivity : AppCompatActivity() {
     private lateinit var inputProcessor: PointerInputProcessor
     private val generator = BrushGenerator()
     private val generatorStates = HashMap<Int, BrushRuntimeState>()
+    private val frameBuilders = HashMap<Int, StrokeFrameBuilder>()   // [G1]
     private var documentWidth = 1
     private var documentHeight = 1
     private var brush = BrushDefinition(
@@ -35,8 +37,8 @@ class GpuPaintPreviewActivity : AppCompatActivity() {
         surface = PaintGLSurfaceView(this)
         setContentView(surface)
         inputProcessor = PointerInputProcessor(
-            onStrokeFinished = { generatorStates.clear() },
-            onStrokeCancelled = { generatorStates.clear() },
+            onStrokeFinished = { generatorStates.clear(); frameBuilders.clear() },
+            onStrokeCancelled = { generatorStates.clear(); frameBuilders.clear() },
             onStrokePoint = ::onStrokePoint
         )
         surface.setOnTouchListener { _, event ->
@@ -64,11 +66,12 @@ class GpuPaintPreviewActivity : AppCompatActivity() {
     private fun onStrokePoint(pointerId: Int, point: StrokePoint) {
         if (documentWidth <= 1 || documentHeight <= 1) return
         val previous = generatorStates[pointerId] ?: BrushRuntimeState()
-        val output = generator.generate(brush, point, previous)
+        val builder = frameBuilders.getOrPut(pointerId) { StrokeFrameBuilder() }   // [G1]
+        val frame = builder.pushPoint(point)                                       // [G1]
+        val output = generator.generate(brush, point, frame, previous)             // [G1]
         generatorStates[pointerId] = output.nextState
         surface.addBrushStamp(output.stamp, documentWidth, documentHeight)
     }
-
     override fun onResume() {
         super.onResume()
         surface.onResume()

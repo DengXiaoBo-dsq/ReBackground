@@ -9,7 +9,11 @@ sealed interface BrushTip {
     }
 
     /** A future renderer resolves this stable key to a texture; the model does not load Bitmaps. */
-    data class Texture(val resourceKey: String, override val aspectRatio: Float = 1f) : BrushTip {
+    data class Texture(
+        val resourceKey: String,
+        override val aspectRatio: Float = 1f,
+        val samplingMode: BrushTextureSamplingMode = BrushTextureSamplingMode.ALPHA_MASK,
+    ) : BrushTip {
         init {
             require(resourceKey.isNotBlank())
             require(aspectRatio.isFinite() && aspectRatio > 0f)

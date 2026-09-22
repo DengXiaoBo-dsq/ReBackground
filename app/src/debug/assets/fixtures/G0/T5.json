@@ -1,0 +1,18 @@
+{
+  "id": "T5",
+  "canvasWidth": 1024,
+  "canvasHeight": 1024,
+  "seed": 5,
+  "timestampStepMs": 4,
+  "idleWaitMs": 5000,
+  "segments": [
+    {
+      "colorHex": 16711680, "opacity": 1.0, "flow": 1.0,
+      "points": [[400,400],[440,400],[480,400],[520,400],[560,400]]
+    }
+  ],
+  "expected": {
+    "roiX": 480, "roiY": 400, "roiW": 40, "roiH": 40,
+    "idleMaeMax": 1
+  }
+}

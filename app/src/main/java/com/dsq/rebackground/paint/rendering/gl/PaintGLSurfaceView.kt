@@ -5,7 +5,8 @@ import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import com.dsq.rebackground.paint.brush.BrushStamp
-
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 /**
  * Optional Android host for the new renderer. It is intentionally separate from legacy  and starts hidden in
  * the existing paint screen until a later migration explicitly enables the GPU canvas.
@@ -16,6 +17,7 @@ class PaintGLSurfaceView @JvmOverloads constructor(
 ) : GLSurfaceView(context, attrs) {
     private var cachedDocumentWidth = -1
     private var cachedDocumentHeight = -1
+    private var debugGlReadyListener: (() -> Unit)? = null
     private val paintRenderer = GLPaintRenderer(
         brushStampVertexSource = readAsset("paint/shaders/brush_stamp.vert"),
         brushStampFragmentSource = readAsset("paint/shaders/brush_stamp.frag"),
@@ -39,42 +41,73 @@ class PaintGLSurfaceView @JvmOverloads constructor(
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)             // ← 4 个 8
         holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)   // ← 必须有
         preserveEGLContextOnPause = true
-        setRenderer(paintRenderer)
+        // [G0] 匿名 Renderer 转调 paintRenderer；仅在 onSurfaceCreated 末尾触发
+        // debugGlReadyListener（生产侧保持 null，行为零变化）。
+        setRenderer(object : GLSurfaceView.Renderer {
+            override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+                paintRenderer.onSurfaceCreated()
+            }
+            override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+                paintRenderer.onSurfaceChanged(width, height)
+                debugGlReadyListener?.invoke()
+            }
+            override fun onDrawFrame(gl: GL10?) {
+                paintRenderer.renderFrame()
+            }
+        })
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
+
+    fun setDebugGlReadyListener(listener: (() -> Unit)?) {
+        debugGlReadyListener = listener
+    }
 
     // ============================================================
     /** Requests one GPU frame. This has no effect on legacy drawing content. */
     fun renderOnce() = requestRender()
 
     fun setDocumentSize(documentWidth: Int, documentHeight: Int) {
-        updateDocumentSizeIfChanged(documentWidth, documentHeight)
+        if (markDocumentSizeIfChanged(documentWidth, documentHeight)) {
+            queueEvent { paintRenderer.setDocumentSize(documentWidth, documentHeight) }
+        }
         requestRender()
     }
 
     fun showBrushStamps(stamps: List<BrushStamp>, documentWidth: Int, documentHeight: Int) {
-        updateDocumentSizeIfChanged(documentWidth, documentHeight)
-        paintRenderer.setBrushStamps(stamps)
+        val sizeChanged = markDocumentSizeIfChanged(documentWidth, documentHeight)
+        queueEvent {
+            if (sizeChanged) paintRenderer.setDocumentSize(documentWidth, documentHeight)
+            paintRenderer.setBrushStamps(stamps)
+        }
         requestRender()
     }
 
     /** Enqueue a single stamp so it is painted exactly once into the persistent document framebuffer. */
     fun addBrushStamp(stamp: BrushStamp, documentWidth: Int, documentHeight: Int) {
-        updateDocumentSizeIfChanged(documentWidth, documentHeight)
-        paintRenderer.addBrushStamps(listOf(stamp))
+        val sizeChanged = markDocumentSizeIfChanged(documentWidth, documentHeight)
+        queueEvent {
+            if (sizeChanged) paintRenderer.setDocumentSize(documentWidth, documentHeight)
+            paintRenderer.addBrushStamps(listOf(stamp))
+        }
         requestRender()
     }
 
     fun showColoredBrushStamps(stamps: List<ColoredBrushStamp>, documentWidth: Int, documentHeight: Int) {
-        updateDocumentSizeIfChanged(documentWidth, documentHeight)
-        paintRenderer.setColoredBrushStamps(stamps)
+        val sizeChanged = markDocumentSizeIfChanged(documentWidth, documentHeight)
+        queueEvent {
+            if (sizeChanged) paintRenderer.setDocumentSize(documentWidth, documentHeight)
+            paintRenderer.setColoredBrushStamps(stamps)
+        }
         requestRender()
     }
 
     fun addColoredBrushStamp(stamp: ColoredBrushStamp, documentWidth: Int, documentHeight: Int) {
-        updateDocumentSizeIfChanged(documentWidth, documentHeight)
-        paintRenderer.addColoredBrushStamps(listOf(stamp))
+        val sizeChanged = markDocumentSizeIfChanged(documentWidth, documentHeight)
+        queueEvent {
+            if (sizeChanged) paintRenderer.setDocumentSize(documentWidth, documentHeight)
+            paintRenderer.addColoredBrushStamps(listOf(stamp))
+        }
         requestRender()
     }
 
@@ -108,6 +141,11 @@ class PaintGLSurfaceView @JvmOverloads constructor(
     fun setStrokeFlow(flow: Float) {
         paintRenderer.setStrokeFlow(flow)
     }
+
+    fun setDryPaper(heightAmplitude: Float, grainScale: Float, seed: Int = 0) {
+        paintRenderer.setDryPaper(heightAmplitude, grainScale, seed)
+        requestRender()
+    }
     // ============================================================
 
     fun setBrushTextures(textures: Map<String, Bitmap>) {
@@ -138,6 +176,53 @@ class PaintGLSurfaceView @JvmOverloads constructor(
     // ============================================================
     fun captureBitmap(callback: (Bitmap?) -> Unit) {
         waitForSurfaceAndCapture(callback, retries = 40)
+    }
+
+    fun captureBitmapWithMetrics(callback: (Bitmap?, Map<String, Any>) -> Unit) {
+        waitForSurfaceAndCaptureWithMetrics(callback, retries = 40)
+    }
+
+    fun captureStrokeRgbaForTest(callback: (FloatArray?, Map<String, Any>) -> Unit) {
+        if (!paintRenderer.isSurfaceReady) {
+            postDelayed({ captureStrokeRgbaForTest(callback) }, 50)
+            return
+        }
+        queueEvent {
+            try {
+                paintRenderer.renderFrame()
+                val pixels = paintRenderer.captureStrokeRgbaForTest()
+                val metrics = paintRenderer.debugRenderMetrics()
+                post { callback(pixels, metrics) }
+            } catch (e: Exception) {
+                android.util.Log.e("PaintGLSurfaceView", "captureStrokeRgbaForTest failed", e)
+                post { callback(null, mapOf("glError" to -1)) }
+            }
+        }
+    }
+
+    private fun waitForSurfaceAndCaptureWithMetrics(
+        callback: (Bitmap?, Map<String, Any>) -> Unit,
+        retries: Int
+    ) {
+        if (paintRenderer.isSurfaceReady) {
+            queueEvent {
+                try {
+                    paintRenderer.renderFrame()
+                    val bitmap = paintRenderer.captureCurrentFrame()
+                    val metrics = paintRenderer.debugRenderMetrics()
+                    post { callback(bitmap, metrics) }
+                } catch (e: Exception) {
+                    android.util.Log.e("PaintGLSurfaceView", "captureBitmapWithMetrics failed", e)
+                    post { callback(null, mapOf("frameTime" to 0f, "frameTimeMs" to 0f, "glError" to -1)) }
+                }
+            }
+            return
+        }
+        if (retries <= 0) {
+            callback(null, mapOf("frameTime" to 0f, "frameTimeMs" to 0f, "glError" to -1))
+            return
+        }
+        postDelayed({ waitForSurfaceAndCaptureWithMetrics(callback, retries - 1) }, 50)
     }
 
     private fun waitForSurfaceAndCapture(callback: (Bitmap?) -> Unit, retries: Int) {
@@ -199,11 +284,12 @@ class PaintGLSurfaceView @JvmOverloads constructor(
         return "precision highp float;\n" + mixbox + "\n" + shader
     }
 
-    private fun updateDocumentSizeIfChanged(width: Int, height: Int) {
+    private fun markDocumentSizeIfChanged(width: Int, height: Int): Boolean {
         if (width != cachedDocumentWidth || height != cachedDocumentHeight) {
             cachedDocumentWidth = width
             cachedDocumentHeight = height
-            paintRenderer.setDocumentSize(width, height)
+            return true
         }
+        return false
     }
 }

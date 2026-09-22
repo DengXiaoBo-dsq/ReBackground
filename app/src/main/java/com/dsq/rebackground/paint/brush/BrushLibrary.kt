@@ -124,7 +124,11 @@ spacingRatio = 0.08f,
 edgeHardness = 0.6f,
 rotationRandomness = 1f,
 bristleDensity = 0.9f,
-paperGrainAffinity = 0.7f
+paperGrainAffinity = 0.7f,
+initialDryLoad = 1f,
+dryDepletionRate = 0.0011f,
+drySpeedDepletionInfluence = 0.35f,
+bristleSeed = 17
 )
 "pen" -> BrushMaterial(spacingRatio = 0.05f, edgeHardness = 0.9f)
 "calligraphy" -> BrushMaterial(spacingRatio = 0.02f, fixedRotationDegrees = 45f)

@@ -16,12 +16,15 @@ import com.dsq.rebackground.paint.math.Vec2
 import com.dsq.rebackground.paint.pigment.PigmentColor
 import com.dsq.rebackground.paint.rendering.gl.ColoredBrushStamp
 import com.dsq.rebackground.paint.rendering.gl.PaintGLSurfaceView
+import com.dsq.rebackground.paint.stroke.StrokeFrameBuilder
+import com.dsq.rebackground.paint.stroke.StrokeFrameSolver
 import com.dsq.rebackground.paint.stroke.StrokePoint
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.math.ceil
 import com.dsq.rebackground.paint.debug.PaintDebugMetrics
 
 class PaintEngineController(private val surface: PaintGLSurfaceView) {
@@ -49,6 +52,13 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
     private var lastAngle = 0f
     private val generator = BrushGenerator()
     private val generatorStates = HashMap<Int, BrushRuntimeState>()
+    private val frameBuilders = HashMap<Int, StrokeFrameBuilder>()   // [G1]
+    // [G0] Batch 2: replay 期间的 opacity / flow 覆盖。
+
+    // [G0] Batch 2: replay 期间的 opacity / flow 覆盖。
+    // null = 使用 brush 自身的值（生产路径行为不变）。
+    @Volatile private var replayOpacityOverride: Float? = null
+    @Volatile private var replayFlowOverride: Float? = null
 
     private val metrics = PaintDebugMetrics()
     private var strokeIdCounter = 0L
@@ -70,12 +80,14 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
         onStrokeFinished = { stroke ->
             history.apply(PaintCommand.AddStroke(activeLayerId, stroke, brush, color))
             generatorStates.clear()
+            frameBuilders.clear()   // [G1]
             strokeJustEnded = true
             surface.endStroke()
             // [G0]
             metrics.endStrokeAndLog(generator.strokeStampCount)
         },
         onStrokeCancelled = {
+            frameBuilders.clear()   // [G1]
             strokeJustEnded = true
             surface.endStroke()
             // [G0]
@@ -140,7 +152,11 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             strokeJustEnded = false
             multiTouchLocked = false
+            // [MOD 2026-09-19] 无条件清空 generatorStates
+            // 原因：单点笔触（DOWN+UP 无 MOVE）不触发 onStrokeFinished，
+            //       导致上一笔的 lastPosition 残留到新笔，触发跨笔插值画长线。
             generatorStates.clear()
+            frameBuilders.clear()   // [G1]
             // [G0]
             metrics.beginStroke(++strokeIdCounter)
             generator.beginStroke()
@@ -152,7 +168,9 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
             transformPointerId1 = -1
             strokeJustEnded = true
             multiTouchLocked = false
+            // [MOD PR-2.6] 用 cancelStroke 丢弃笔迹（ACTION_CANCEL 意味着笔无效）
             surface.cancelStroke()
+            frameBuilders.clear()   // [G1]
             // [G0]
             metrics.endStrokeAndLog(generator.strokeStampCount)
             return true
@@ -175,11 +193,16 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
             if (!multiTouchLocked) {
 
 
+
                 multiTouchLocked = true
                 strokeJustEnded = true
+                // [MOD PR-2.6] 改用 cancelStroke：丢弃当前笔的中间产物
+                //   避免 endStroke 把第一根手指画的点 flush 到 pigment 留下脏点
                 surface.cancelStroke()
+                frameBuilders.clear()               // [G1]
                 metrics.markMultiTouchCancelled()   // [G0]
-                Log.d("PaintEngineController", "multiTouchLocked = true, stroke cancelled")
+                Log.d("PaintEngineController",
+                    "multiTouchLocked = true, stroke cancelled")
             }
             if (!transforming) beginTransform(event)
             updateTransform(event)
@@ -302,22 +325,32 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
         if (isOob) {
             Log.d("PaintEngineController",
                 "onStrokePoint out of bounds: pointer=$pointerId x=${p.x} y=${p.y}")
-            metrics.markOobPoint()              // [G0]
+            metrics.markDocumentOob()           // [G0]       // [G0]
             generatorStates.remove(pointerId)
+            frameBuilders.remove(pointerId)     // [G1]
             return
         }
 
         val previous = generatorStates[pointerId] ?: BrushRuntimeState()
-        val output = generator.generate(brush, point, previous)
+        val builder = frameBuilders.getOrPut(pointerId) { StrokeFrameBuilder() }   // [G1]
+        val frame = builder.pushPoint(point)                                       // [G1]
+        metrics.onAngleDelta(builder.lastAngleDelta)                               // [G1]
+        val output = generator.generate(brush, point, frame, previous)             // [G1]
         generatorStates[pointerId] = output.nextState
 
-        currentStrokeOpacity = brush.opacity
-        surface.setStrokeOpacity(brush.opacity)
+        // [G0] Batch 2: replay override 优先，null 时回退 brush（生产路径不变）
+        val baseOpacity = replayOpacityOverride ?: brush.opacity
+        val baseFlow = replayFlowOverride ?: brush.flow
+        val effectiveOpacity = (baseOpacity * output.opacityFactor).coerceIn(0f, 1f)
+        val effectiveFlow = (baseFlow * output.flowFactor).coerceIn(0f, 1f)
+        currentStrokeOpacity = effectiveOpacity
+        // Dynamics are per-stamp. Keep the legacy whole-stroke clamp neutral so
+        // the final point cannot retroactively change the rest of the stroke.
+        surface.setStrokeOpacity(1f)
         // ============================================================
         // [MOD PR-2.6] 传 flow（缺失 = flow 停在上一笔的值）
         // ============================================================
-        surface.setStrokeFlow(brush.flow)
-
+        surface.setStrokeFlow(1f)
 
         val currentStamp = output.stamp
         val lastPos = previous.lastPosition
@@ -337,7 +370,7 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
             val distance = hypot(dx, dy)
 
             val spacingThreshold =
-                (currentStamp.diameterDocumentUnits * 0.15f).coerceAtLeast(0.05f)
+                (currentStamp.diameterDocumentUnits * brush.material.spacingRatio).coerceAtLeast(0.05f)
 
             val MAX_STROKE_JUMP = 200f
             if (distance > MAX_STROKE_JUMP) {
@@ -346,7 +379,7 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
                     "cross-stroke jump detected: ...")
                 generatorStates[pointerId] = BrushRuntimeState()
             } else if (distance > spacingThreshold) {
-                val steps = (distance / spacingThreshold).toInt().coerceIn(1, 256)
+                val steps = ceil(distance / spacingThreshold).toInt().coerceIn(1, 256)
 
                 if (steps > 50) {
                     Log.w("SUSPECT",
@@ -357,19 +390,43 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
                     val t = i.toFloat() / steps.toFloat()
                     val interpX = lastPos.x + dx * t
                     val interpY = lastPos.y + dy * t
-                    val interpStamp = BrushStamp(
+                    val interpStamp = currentStamp.copy(
                         center = Vec2(interpX, interpY),
-                        diameterDocumentUnits = currentStamp.diameterDocumentUnits,
-                        aspectRatio = currentStamp.aspectRatio,
-                        rotationRadians = currentStamp.rotationRadians,
-                        textureResourceKey = currentStamp.textureResourceKey
+                        diameterDocumentUnits = lerp(
+                            previous.lastDiameterDocumentUnits ?: currentStamp.diameterDocumentUnits,
+                            currentStamp.diameterDocumentUnits,
+                            t,
+                        ),
+                        aspectRatio = lerp(
+                            previous.lastAspectRatio ?: currentStamp.aspectRatio,
+                            currentStamp.aspectRatio,
+                            t,
+                        ),
+                        rotationRadians = lerpAngle(
+                            previous.lastRotationRadians ?: currentStamp.rotationRadians,
+                            currentStamp.rotationRadians,
+                            t,
+                        ),
+                        dryLoad = lerp(previous.dryLoad ?: currentStamp.dryLoad, currentStamp.dryLoad, t),
+                        dryArcLengthDocumentUnits =
+                            (currentStamp.dryArcLengthDocumentUnits - distance * (1f - t)).coerceAtLeast(0f),
+                        grainPhaseTexels = if (currentStamp.grainResourceKey != null) {
+                            com.dsq.rebackground.paint.brush.GrainMapping.interpolatePhaseTexels(
+                                currentStamp.grainPhaseTexels,
+                                distance,
+                                t,
+                                currentStamp.grainScaleDocumentUnitsPerTexel,
+                            )
+                        } else {
+                            currentStamp.grainPhaseTexels
+                        },
                     )
                     surface.addColoredBrushStamp(
                         ColoredBrushStamp(
                             interpStamp,
                             color.red, color.green, color.blue,
-                            alpha = 1f,
-                            flow = brush.flow
+                            alpha = baseOpacity * lerp(previous.lastOpacityFactor, output.opacityFactor, t),
+                            flow = baseFlow * lerp(previous.lastFlowFactor, output.flowFactor, t),
                         ),
                         documentWidth,
                         documentHeight
@@ -383,19 +440,107 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
             ColoredBrushStamp(
                 currentStamp,
                 color.red, color.green, color.blue,
-                alpha = 1f,
-                flow = brush.flow
+                alpha = effectiveOpacity,
+                flow = effectiveFlow
             ),
             documentWidth,
             documentHeight
         )
         metrics.onPoint(point, currentStamp, interpCount, largeJump)
     }
+
+    // ============================================================
+    // [G0] Batch 2: Deterministic Replay entry for test。
+    // 走完整生产 pipeline：onStrokePoint → BrushGenerator → surface → renderer。
+    // 不写 history，不修改 document，不污染 UI 状态。
+    //
+    // 参数：
+    //   points   —— 归一化 StrokePoint 序列
+    //   brushId  —— 预留（G0 无 BrushRepository，暂不使用）
+    //   color    —— 0xAARRGGBB 整型
+    //   opacity  —— 覆盖 brush.opacity
+    //   flow     —— 覆盖 brush.flow
+    //   seed     —— 预留（G0 无随机，G3+ 使用）
+    // 返回：PaintDebugMetrics.snapshot()
+    // ============================================================
+    @androidx.annotation.VisibleForTesting
+    fun replayStrokeForTest(
+        points: List<StrokePoint>,
+        brushId: String,
+        color: Int,
+        opacity: Float,
+        flow: Float,
+        seed: Long
+    ): Map<String, Any> {
+        @Suppress("UNUSED_EXPRESSION") brushId
+        @Suppress("UNUSED_EXPRESSION") seed
+
+        // 颜色 hex → 0..1
+        val r = ((color shr 16) and 0xFF) / 255f
+        val g = ((color shr 8) and 0xFF) / 255f
+        val b = (color and 0xFF) / 255f
+        setColor(r, g, b)
+
+        // opacity / flow 覆盖
+        replayOpacityOverride = opacity.coerceIn(0f, 1f)
+        replayFlowOverride = flow.coerceIn(0f, 1f)
+
+        // ACTION_DOWN 语义
+        strokeJustEnded = false
+        multiTouchLocked = false
+        generatorStates.clear()
+        frameBuilders.clear()
+        metrics.beginStroke(++strokeIdCounter)
+        generator.beginStroke()
+
+        // 逐点灌入生产路径
+        for (pt in points) {
+            onStrokePoint(0, pt)
+        }
+
+        // ACTION_UP 渲染语义（不写 history）
+        generatorStates.clear()
+        frameBuilders.clear()
+        strokeJustEnded = true
+        surface.endStroke()
+        metrics.endStrokeAndLog(generator.strokeStampCount)
+        metrics.markStrokeFinished()   // [G0] Batch 2
+
+        replayOpacityOverride = null
+        replayFlowOverride = null
+
+        return metrics.snapshot()
+    }
+
+    // ============================================================
+    // [G0] Batch 2: 暴露 lifecycle 计数 + reset
+    // ============================================================
+    @androidx.annotation.VisibleForTesting
+    fun lifecycleCountsForTest(): Map<String, Int> = metrics.lifecycleSnapshot()
+
+    @androidx.annotation.VisibleForTesting
+    fun resetLifecycleCountsForTest() = metrics.resetLifecycleCounters()
+
+    /** Clears renderer state between deterministic fixtures without replacing UI state. */
+    @androidx.annotation.VisibleForTesting
+    fun clearCanvasForTest() {
+        generatorStates.clear()
+        frameBuilders.clear()
+        strokeJustEnded = true
+        surface.clearCanvas()
+    }
+
+    // ============================================================
+    // [G0] Batch 2: 抓取 composite FBO 为 Bitmap（异步，UI 线程回调）
+    // ============================================================
+    @androidx.annotation.VisibleForTesting
+    fun captureCompositeForTest(callback: (android.graphics.Bitmap?, Map<String, Any>) -> Unit) {
+        surface.captureBitmapWithMetrics(callback)
+    }
     private fun replayDocument() {
         surface.clearCanvas()
         // [G0] replay 不参与 metrics，但需重置 generator stamp 计数
         generator.beginStroke()
-
         val stamps = mutableListOf<ColoredBrushStamp>()
         document.layers.filter { it.visible }.flatMap { it.commands }
             .filterIsInstance<PaintCommand.AddStroke>()
@@ -403,20 +548,32 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
                 var state = BrushRuntimeState()
                 val commandBrush = command.brush ?: brush
                 val commandColor = command.color ?: color
-                command.stroke.points.forEach { point ->
-                    val output = generator.generate(commandBrush, point, state)
+                val commandPoints = command.stroke.points
+                val frames = StrokeFrameSolver().solve(commandPoints)
+                commandPoints.zip(frames).forEach { (point, frame) ->
+                    val output = generator.generate(commandBrush, point, frame, state)      // [G1]
                     state = output.nextState
                     stamps += ColoredBrushStamp(
                         output.stamp,
                         commandColor.red,
                         commandColor.green,
                         commandColor.blue,
-                        alpha = 1f,
-                        flow = commandBrush.flow
+                        alpha = commandBrush.opacity * output.opacityFactor,
+                        flow = commandBrush.flow * output.flowFactor,
                     )
                 }
             }
         surface.showColoredBrushStamps(stamps, documentWidth, documentHeight)
+    }
+
+    private fun lerp(from: Float, to: Float, amount: Float): Float = from + (to - from) * amount
+
+    private fun lerpAngle(from: Float, to: Float, amount: Float): Float {
+        var delta = to - from
+        val twoPi = 2f * PI.toFloat()
+        while (delta > PI.toFloat()) delta -= twoPi
+        while (delta < -PI.toFloat()) delta += twoPi
+        return from + delta * amount
     }
 
     private fun beginTransform(event: MotionEvent) {
