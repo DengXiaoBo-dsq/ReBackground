@@ -2,6 +2,7 @@ package com.dsq.rebackground.paint.rendering.gl
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.dsq.rebackground.paint.paper.PaperDefinition
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import com.dsq.rebackground.paint.brush.BrushStamp
@@ -144,6 +145,11 @@ class PaintGLSurfaceView @JvmOverloads constructor(
 
     fun setDryPaper(heightAmplitude: Float, grainScale: Float, seed: Int = 0) {
         paintRenderer.setDryPaper(heightAmplitude, grainScale, seed)
+        requestRender()
+    }
+
+    fun setPaper(paper: PaperDefinition) {
+        paintRenderer.setPaper(paper)
         requestRender()
     }
     // ============================================================

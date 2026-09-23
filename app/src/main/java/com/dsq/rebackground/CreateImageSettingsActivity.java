@@ -41,7 +41,7 @@ public class CreateImageSettingsActivity extends AppCompatActivity {
     private EditText widthInput, heightInput;
     private View colorPreview;
     private TextView colorHexText;
-    private Spinner textureSpinner;
+    private Spinner paperSpinner;
     private Button createButton;
     private ImageButton btnPickImage;
     private Button btnImportDraft;  // 新增
@@ -59,7 +59,7 @@ public class CreateImageSettingsActivity extends AppCompatActivity {
         heightInput = findViewById(R.id.heightInput);
         colorPreview = findViewById(R.id.colorPreview);
         colorHexText = findViewById(R.id.colorHexText);
-        textureSpinner = findViewById(R.id.textureSpinner);
+        paperSpinner = findViewById(R.id.paperSpinner);
         createButton = findViewById(R.id.createButton);
         btnPickImage = findViewById(R.id.btnPickImage);
         btnImportDraft = findViewById(R.id.btnImportDraft);  // 新增
@@ -222,11 +222,13 @@ public class CreateImageSettingsActivity extends AppCompatActivity {
     }
 
     private void createCanvas() {
+        String paperId = selectedPaperId();
         // 如果用户选择了图片，则直接启动绘画界面
         if (pickedImageUri != null) {
             Intent intent = new Intent(this, PaintActivity.class);
             intent.putExtra("imageUri", pickedImageUri.toString());
             intent.putExtra("bgColor", currentColor);
+            intent.putExtra("paperId", paperId);
             startActivity(intent);
             return;
         }
@@ -254,13 +256,17 @@ public class CreateImageSettingsActivity extends AppCompatActivity {
             return;
         }
 
-        int textureIndex = textureSpinner.getSelectedItemPosition();
-
         Intent intent = new Intent(this, PaintActivity.class);
         intent.putExtra("canvasWidth", width);
         intent.putExtra("canvasHeight", height);
         intent.putExtra("bgColor", currentColor);
-        intent.putExtra("textureIndex", textureIndex);
+        intent.putExtra("paperId", paperId);
         startActivity(intent);
+    }
+
+    private String selectedPaperId() {
+        String[] paperIds = {"smooth", "medium", "rough-watercolor"};
+        int index = paperSpinner.getSelectedItemPosition();
+        return paperIds[Math.max(0, Math.min(index, paperIds.length - 1))];
     }
 }

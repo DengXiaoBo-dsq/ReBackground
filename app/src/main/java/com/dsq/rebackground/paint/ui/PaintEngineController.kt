@@ -14,6 +14,7 @@ import com.dsq.rebackground.paint.input.DocumentSpaceTransform
 import com.dsq.rebackground.paint.input.PointerInputProcessor
 import com.dsq.rebackground.paint.math.Vec2
 import com.dsq.rebackground.paint.pigment.PigmentColor
+import com.dsq.rebackground.paint.paper.PaperPresets
 import com.dsq.rebackground.paint.rendering.gl.ColoredBrushStamp
 import com.dsq.rebackground.paint.rendering.gl.PaintGLSurfaceView
 import com.dsq.rebackground.paint.stroke.StrokeFrameBuilder
@@ -39,6 +40,7 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
     private var brush = BrushDefinition("default-round", "默认圆形", 24f)
     private var color = PigmentColor(0f, 0f, 0f)
     private var activeLayerId = "ink"
+    private var paperId = PaperPresets.DEFAULT_ID
     private var viewScale = 1f
     private var viewOffsetX = 0f
     private var viewOffsetY = 0f
@@ -133,6 +135,13 @@ class PaintEngineController(private val surface: PaintGLSurfaceView) {
         generatorStates.clear()
         surface.setDocumentSize(newDocW, newDocH)
         surface.clearCanvas()
+    }
+
+    /** Selects a canvas paper by stable id; unknown ids deliberately fall back to the default. */
+    fun setPaper(paperId: String) {
+        val paper = PaperPresets.requireOrDefault(paperId)
+        this.paperId = paper.id
+        surface.setPaper(paper)
     }
     fun onMotionEvent(event: MotionEvent): Boolean {
         Log.d("PaintEngineController",

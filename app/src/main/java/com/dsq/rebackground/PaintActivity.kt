@@ -94,6 +94,7 @@ class PaintActivity : AppCompatActivity() {
         Log.d(TAG, "=== onCreate ===")
 
         initPaintEngine()
+        engineController.setPaper(intent.getStringExtra("paperId") ?: "medium")
         bindViews()
         loadAllBrushes()
         loadBrushTextures()

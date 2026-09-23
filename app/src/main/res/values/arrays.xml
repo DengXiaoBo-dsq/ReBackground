@@ -19,6 +19,12 @@
         <item>水彩纸</item>
     </string-array>
 
+    <string-array name="paper_array">
+        <item>光滑纸</item>
+        <item>中粗纸</item>
+        <item>粗糙水彩纸</item>
+    </string-array>
+
         <string-array name="texture_size_options">
             <item>128×128</item>
             <item>256×256</item>

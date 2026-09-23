@@ -83,6 +83,7 @@ import com.dsq.rebackground.paint.rendering.PaintRenderer
 import com.dsq.rebackground.paint.rendering.RenderGraph
 import com.dsq.rebackground.paint.rendering.RenderTarget
 import com.dsq.rebackground.paint.pigment.VelocityField
+import com.dsq.rebackground.paint.paper.PaperDefinition
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.nio.ByteBuffer
@@ -1172,6 +1173,15 @@ class GLPaintRenderer(
         dryPaperHeightAmplitude = heightAmplitude
         dryPaperGrainScale = grainScale
         dryPaperSeed = seed
+    }
+
+    /** Applies the canvas-owned paper parameters to the existing brush shader uniforms. */
+    fun setPaper(paper: PaperDefinition) {
+        setDryPaper(
+            heightAmplitude = paper.material.heightAmplitude,
+            grainScale = paper.material.grainScale,
+            seed = paper.seed,
+        )
     }
     // ============================================================
 

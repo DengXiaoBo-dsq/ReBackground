@@ -181,23 +181,23 @@
             android:fontFamily="monospace"
             android:layout_marginEnd="16dp" />
 
-        <!-- 纹理选择（简化） -->
+        <!-- 纸张是画布属性；旧纹理索引未被绘制链路消费，改为纸张选择。 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="纹理"
+            android:text="纸张"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:layout_marginEnd="8dp" />
 
         <Spinner
-            android:id="@+id/textureSpinner"
+            android:id="@+id/paperSpinner"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/spinner_bg"
             android:popupBackground="#333333"
-            android:entries="@array/texture_array" />
+            android:entries="@array/paper_array" />
     </LinearLayout>
 
     <!-- 创建按钮 -->
