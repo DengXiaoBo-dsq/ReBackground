@@ -4,6 +4,8 @@ uniform sampler2D uCanvasTexture;
 uniform sampler2D uPigmentTexture;
 uniform sampler2D uStrokeTexture;
 uniform float uStrokeOpacity;   // [MOD 2026-09-11] 覆盖度上限
+uniform sampler2D uPaperTexture;
+uniform float uPaperVisualStrength;
 
 
 void main() {
@@ -40,5 +42,9 @@ void main() {
     }
 
     vec3 result = mix(canvas, displayColor, displayCoverage);
+    // Layer A: neutral paper reflectance is visible on the blank canvas and
+    // through every brush type; it does not alter pigment mixing or FBO formats.
+    float paperValue = texture2D(uPaperTexture, vTexCoord).r;
+    result *= mix(1.0, paperValue, uPaperVisualStrength);
     gl_FragColor = vec4(result, 1.0);
 }

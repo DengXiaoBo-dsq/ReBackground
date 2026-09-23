@@ -19,6 +19,7 @@ data class BrushStamp(
     val dryArcLengthDocumentUnits: Float = 0f,
     val bristleDensity: Float = 0f,
     val paperGrainAffinity: Float = 0f,
+    val paperResponseStrength: Float = 1f,
     val bristleSeed: Int = 0,
     val dryPressure: Float = 1f,
 ) {
@@ -37,6 +38,7 @@ data class BrushStamp(
         require(dryArcLengthDocumentUnits.isFinite() && dryArcLengthDocumentUnits >= 0f)
         require(bristleDensity.isFinite() && bristleDensity in 0f..1f)
         require(paperGrainAffinity.isFinite() && paperGrainAffinity in 0f..1f)
+        require(paperResponseStrength.isFinite() && paperResponseStrength in 0f..1f)
         require(dryPressure.isFinite() && dryPressure in 0f..1f)
     }
 }

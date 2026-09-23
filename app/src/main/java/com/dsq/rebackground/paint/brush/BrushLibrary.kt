@@ -85,7 +85,7 @@ id = "preset_electric",
 displayName = "电子画笔",
 group = "内置",
 tip = BrushTip.Round,
-material = BrushMaterial(),
+material = BrushMaterial(paperGrainAffinity = .6f, paperResponseStrength = .1f),
 texturePath = null,
 thumbnailPath = null,
 defaultDiameter = 8f,
@@ -125,16 +125,18 @@ edgeHardness = 0.6f,
 rotationRandomness = 1f,
 bristleDensity = 0.9f,
 paperGrainAffinity = 0.7f,
+paperResponseStrength = 1f,
 initialDryLoad = 1f,
 dryDepletionRate = 0.0011f,
 drySpeedDepletionInfluence = 0.35f,
 bristleSeed = 17
 )
-"pen" -> BrushMaterial(spacingRatio = 0.05f, edgeHardness = 0.9f)
+"pen" -> BrushMaterial(spacingRatio = 0.05f, edgeHardness = 0.9f, paperGrainAffinity = .6f, paperResponseStrength = .1f)
 "calligraphy" -> BrushMaterial(spacingRatio = 0.02f, fixedRotationDegrees = 45f)
-"airbrush" -> BrushMaterial(spacingRatio = 0.05f, edgeHardness = 0.2f)
-"marker" -> BrushMaterial(spacingRatio = 0.08f, edgeHardness = 0.9f)
-else -> BrushMaterial()
+"airbrush" -> BrushMaterial(spacingRatio = 0.05f, edgeHardness = 0.2f, paperGrainAffinity = .5f, paperResponseStrength = .3f)
+"marker" -> BrushMaterial(spacingRatio = 0.08f, edgeHardness = 0.9f, paperGrainAffinity = .75f, paperResponseStrength = .4f)
+"g61", "g61-1" -> BrushMaterial(paperGrainAffinity = .7f, paperResponseStrength = .6f)
+else -> BrushMaterial(paperGrainAffinity = .6f, paperResponseStrength = .5f)
 }
 
 private fun dynamicsFor(name: String): BrushDynamics = when (name) {

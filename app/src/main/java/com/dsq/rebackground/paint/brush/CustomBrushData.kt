@@ -65,7 +65,9 @@ data class CustomBrushData(
             material = BrushMaterial(
                 spacingRatio = spacing.coerceAtLeast(0.02f),
                 rotationRandomness = rotationRandomness.coerceIn(0f, 1f),
-                fixedRotationDegrees = rotation.toFloat()
+                fixedRotationDegrees = rotation.toFloat(),
+                paperGrainAffinity = .6f,
+                paperResponseStrength = .5f,
             ),
             texturePath = texturePath,
             thumbnailPath = null,

@@ -20,6 +20,10 @@ uniform float uBristleDensity;
 uniform float uPaperAffinity;
 uniform float uPaperHeightAmplitude;
 uniform float uPaperGrainScale;
+uniform float uPaperRoughness;
+uniform float uPaperAbsorption;
+uniform float uPaperFiberDensity;
+uniform float uPaperResponseStrength;
 uniform float uDrySeed;
 uniform float uDryPressure;
 uniform vec2 uCenterDocument;
@@ -149,13 +153,26 @@ float sampleDryMaterial() {
     );
 
     float height = dryPaperHeight(documentPosition);
-    float contact = 0.5 + (height - 0.5) * uPaperHeightAmplitude + (uDryPressure - 0.5) * 0.16;
+    // Paper roughness controls how strongly the fixed height field changes bristle contact.
+    // With the legacy value 0, this is exactly the original G5 contact expression.
+    float paperInfluence = uPaperAffinity * uPaperResponseStrength;
+    float roughRelief = (height - 0.5) * uPaperHeightAmplitude * uPaperRoughness * uPaperResponseStrength;
+    float contact = 0.5 + (height - 0.5) * uPaperHeightAmplitude + roughRelief +
+        (uDryPressure - 0.5) * 0.16;
     float paperTooth = mix(
         1.0,
         smoothstep(0.32, 0.68, contact),
-        clamp(uPaperHeightAmplitude, 0.0, 1.0)
+        clamp(uPaperHeightAmplitude * (0.45 + 0.55 * uPaperRoughness), 0.0, 1.0)
     );
-    float paperFactor = mix(1.0, paperTooth, uPaperAffinity);
+    // Absorption models the amount of dry pigment accepted by paper pores. It only
+    // modulates paper-sensitive brushes and is deliberately independent of wet G6.
+    float absorptionFactor = 1.0 - uPaperAffinity * uPaperAbsorption *
+        (0.14 + 0.26 * (1.0 - paperTooth));
+    // A stable micro-fibre pattern adds porous gaps without changing the bristle system.
+    float fibreNoise = dryPaperValueNoise(documentPosition / max(3.75 * uPaperGrainScale, 0.001) + vec2(17.0, 43.0));
+    float fibrePattern = smoothstep(0.18, 0.82, fibreNoise);
+    float fibreFactor = mix(1.0, 0.38 + 0.62 * fibrePattern, uPaperFiberDensity * uPaperAffinity);
+    float paperFactor = mix(1.0, paperTooth * absorptionFactor * fibreFactor, paperInfluence);
 
     float bands = 8.0 + uBristleDensity * 40.0;
     float coordinate = (clamp(vUnitPosition.y, -1.0, 1.0) * 0.5 + 0.5) * bands + 0.5;

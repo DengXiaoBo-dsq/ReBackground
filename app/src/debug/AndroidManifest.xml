@@ -3,6 +3,9 @@
 
     <application>
         <activity
+            android:name=".painttest.PaperDiagnosticActivity"
+            android:exported="true" />
+        <activity
             android:name=".painttest.G6AcceptanceActivity"
             android:exported="true" />
         <activity

@@ -18,6 +18,8 @@ data class BrushMaterial(
     val humidityResponse: Float = 0f,
     val bristleDensity: Float = 0f,
     val paperGrainAffinity: Float = 0f,
+    /** Per-brush Layer B multiplier. Canvas Layer A remains brush independent. */
+    val paperResponseStrength: Float = 0.5f,
     val initialDryLoad: Float = 1f,
     val dryDepletionRate: Float = 0f,
     val dryRechargeRate: Float = 0f,
@@ -33,6 +35,7 @@ data class BrushMaterial(
         require(humidityResponse.isFinite() && humidityResponse in 0f..1f)
         require(bristleDensity.isFinite() && bristleDensity in 0f..1f)
         require(paperGrainAffinity.isFinite() && paperGrainAffinity in 0f..1f)
+        require(paperResponseStrength.isFinite() && paperResponseStrength in 0f..1f)
         require(initialDryLoad.isFinite() && initialDryLoad in 0f..1f)
         require(dryDepletionRate.isFinite() && dryDepletionRate >= 0f)
         require(dryRechargeRate.isFinite() && dryRechargeRate >= 0f)

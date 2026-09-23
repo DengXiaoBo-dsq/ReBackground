@@ -67,6 +67,7 @@ class BrushGenerator {
                 dryArcLengthDocumentUnits = frame.arcLength,
                 bristleDensity = material.bristleDensity,
                 paperGrainAffinity = material.paperGrainAffinity,
+                paperResponseStrength = material.paperResponseStrength,
                 bristleSeed = material.bristleSeed,
                 dryPressure = point.pressure,
             ),

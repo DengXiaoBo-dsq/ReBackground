@@ -10,6 +10,7 @@ import com.dsq.rebackground.paint.material.DryBrushLoadConfig
 import com.dsq.rebackground.paint.material.DryDeposit
 import com.dsq.rebackground.paint.math.Vec2
 import com.dsq.rebackground.paint.paper.PaperHeightField
+import com.dsq.rebackground.paint.paper.PaperPresets
 import com.dsq.rebackground.paint.rendering.gl.ColoredBrushStamp
 import com.dsq.rebackground.paint.rendering.gl.PaintGLSurfaceView
 import org.json.JSONArray
@@ -24,6 +25,7 @@ import kotlin.math.atan2
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** Device-side G5 acceptance: CPU invariants plus real GLES paper/bristle output. */
 class G5AcceptanceActivity : AppCompatActivity() {
@@ -45,6 +47,7 @@ class G5AcceptanceActivity : AppCompatActivity() {
                         "D" -> runPaperDifference(true)
                         "E" -> runDryGaps()
                         "F" -> runBristleOrientation()
+                        "R" -> runPaperRenderAcceptance()
                         else -> finishResult("?", false, JSONObject().put("error", "unknown gate"))
                     }
                 }
@@ -205,6 +208,87 @@ class G5AcceptanceActivity : AppCompatActivity() {
         next(0)
     }
 
+    /**
+     * G5-R1..R5: one fixed pencil fixture rendered through the real brush FBO.
+     * The fixture isolates canvas paper by disabling bristle bands while retaining
+     * full paper affinity; this makes paper variance measurable and reproducible.
+     */
+    private fun runPaperRenderAcceptance() {
+        val width = 512
+        val height = 192
+        val centerY = height / 2f
+        val root = evidenceRoot("R")
+        val pencil = (6..506 step 4).map { x ->
+            BrushStamp(
+                center = Vec2(x.toFloat(), centerY), diameterDocumentUnits = 26f,
+                aspectRatio = 1f, rotationRadians = 0f, dryLoad = .85f,
+                dryArcLengthDocumentUnits = (x - 6).toFloat(), bristleDensity = 0f,
+                paperGrainAffinity = 1f, bristleSeed = 41, dryPressure = .48f,
+            )
+        }
+        val papers = PaperPresets.all()
+        val captures = LinkedHashMap<String, FloatArray>()
+        val renderRows = JSONArray()
+        surface.setDocumentSize(width, height)
+
+        fun next(index: Int) {
+            if (index == papers.size) {
+                val smooth = captures.getValue(PaperPresets.SMOOTH_ID)
+                val medium = captures.getValue(PaperPresets.MEDIUM_ID)
+                val rough = captures.getValue(PaperPresets.ROUGH_WATERCOLOR_ID)
+                val smoothCoverage = coverageRegion(smooth, width, height)
+                val mediumCoverage = coverageRegion(medium, width, height)
+                val roughCoverage = coverageRegion(rough, width, height)
+                val smoothStd = standardDeviation(smoothCoverage)
+                val mediumStd = standardDeviation(mediumCoverage)
+                val roughStd = standardDeviation(roughCoverage)
+                val stdRatio = roughStd / maxOf(smoothStd, 1e-9)
+                val ssim = ssim(smoothCoverage, roughCoverage)
+                val r1 = papers.all { paper ->
+                    paper.material.roughness in 0f..1f &&
+                        paper.material.absorption in 0f..1f &&
+                        paper.material.fiberDensity in 0f..1f
+                }
+                val r2 = stdRatio >= 1.5
+                val r3 = ssim < .95
+                val r4 = roughStd >= mediumStd && mediumStd >= smoothStd && roughStd >= 1.5 * smoothStd
+                val noGlErrors = (0 until renderRows.length()).all { renderRows.getJSONObject(it).getInt("glError") == 0 }
+                val metrics = JSONObject()
+                    .put("fixture", "pencil-500px-line")
+                    .put("R1_parameterPath", JSONObject().put("roughness", r1).put("absorption", r1).put("fiberDensity", r1))
+                    .put("R2_roughSmoothStdRatio", stdRatio)
+                    .put("R3_smoothRoughSsim", ssim)
+                    .put("R4_coverageVariance", JSONObject()
+                        .put("smooth", smoothStd * smoothStd)
+                        .put("medium", mediumStd * mediumStd)
+                        .put("rough", roughStd * roughStd))
+                    .put("R4_coverageStd", JSONObject().put("smooth", smoothStd).put("medium", mediumStd).put("rough", roughStd))
+                    .put("renderCases", renderRows)
+                    .put("noGlErrors", noGlErrors)
+                finishResult("R", r1 && r2 && r3 && r4 && noGlErrors, metrics)
+                return
+            }
+            val paper = papers[index]
+            surface.setPaper(paper)
+            render(pencil, width, height) { values, renderMetrics ->
+                val glError = (renderMetrics["glError"] as? Number)?.toInt() ?: -1
+                if (values == null) {
+                    finishResult("R", false, JSONObject().put("error", "capture failed for ${paper.id}"))
+                    return@render
+                }
+                captures[paper.id] = values
+                saveFloatPng(values, width, height, File(root, "${paper.id}-pencil-500px.png"))
+                renderRows.put(JSONObject().put("paperId", paper.id)
+                    .put("roughness", paper.material.roughness)
+                    .put("absorption", paper.material.absorption)
+                    .put("fiberDensity", paper.material.fiberDensity)
+                    .put("glError", glError))
+                next(index + 1)
+            }
+        }
+        next(0)
+    }
+
     private fun dryStamp(center: Vec2, diameter: Float, rotation: Float, arc: Float) = BrushStamp(
         center = center, diameterDocumentUnits = diameter, aspectRatio = 1f, rotationRadians = rotation,
         dryLoad = exp(-DEPLETION * arc), dryArcLengthDocumentUnits = arc,
@@ -252,6 +336,31 @@ class G5AcceptanceActivity : AppCompatActivity() {
     private fun variance(values: List<Double>): Double {
         val mean = values.average()
         return values.sumOf { (it - mean) * (it - mean) } / values.size
+    }
+
+    private fun coverageRegion(values: FloatArray, width: Int, height: Int): List<Double> {
+        val output = ArrayList<Double>(500 * 20)
+        val y0 = height / 2 - 10
+        val y1 = height / 2 + 10
+        for (y in y0 until y1) for (x in 6..506) output += alpha(values, width, x, y)
+        return output
+    }
+
+    private fun standardDeviation(values: List<Double>): Double = sqrt(variance(values))
+
+    private fun ssim(a: List<Double>, b: List<Double>): Double {
+        require(a.size == b.size && a.isNotEmpty())
+        val meanA = a.average(); val meanB = b.average()
+        var varianceA = 0.0; var varianceB = 0.0; var covariance = 0.0
+        for (i in a.indices) {
+            val da = a[i] - meanA; val db = b[i] - meanB
+            varianceA += da * da; varianceB += db * db; covariance += da * db
+        }
+        val denominator = maxOf(1, a.size - 1).toDouble()
+        varianceA /= denominator; varianceB /= denominator; covariance /= denominator
+        val c1 = .01 * .01; val c2 = .03 * .03
+        return ((2.0 * meanA * meanB + c1) * (2.0 * covariance + c2)) /
+            ((meanA * meanA + meanB * meanB + c1) * (varianceA + varianceB + c2))
     }
 
     private fun linearR2(x: List<Double>, y: List<Double>): Double {

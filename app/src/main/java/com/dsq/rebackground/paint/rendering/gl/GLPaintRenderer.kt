@@ -84,6 +84,7 @@ import com.dsq.rebackground.paint.rendering.RenderGraph
 import com.dsq.rebackground.paint.rendering.RenderTarget
 import com.dsq.rebackground.paint.pigment.VelocityField
 import com.dsq.rebackground.paint.paper.PaperDefinition
+import com.dsq.rebackground.paint.paper.PaperTextureGenerator
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.nio.ByteBuffer
@@ -259,6 +260,13 @@ class GLPaintRenderer(
     @Volatile private var dryPaperHeightAmplitude = 0.5f
     @Volatile private var dryPaperGrainScale = 1f
     @Volatile private var dryPaperSeed = 0
+    // Legacy setDryPaper intentionally leaves these at zero, preserving G5's prior fixture behaviour.
+    @Volatile private var dryPaperRoughness = 0f
+    @Volatile private var dryPaperAbsorption = 0f
+    @Volatile private var dryPaperFiberDensity = 0f
+    @Volatile private var paperVisualStrength = 0f
+    @Volatile private var pendingPaperTextureBitmap: Bitmap? = null
+    private var paperTextureHandle = 0
     @Volatile private var viewScale = 1f
     @Volatile private var viewOffsetX = 0f
     @Volatile private var viewOffsetY = 0f
@@ -820,6 +828,7 @@ class GLPaintRenderer(
         ensureCanvasResources()
         ensureOffscreenResources()
         uploadBrushTexturesIfNeeded()
+        uploadPaperTextureIfNeeded()
         val framebuffer = canvasFramebuffer
         val pigmentFramebuffer = pigmentFramebuffer
         val compositeFramebuffer = compositeFramebuffer
@@ -1182,6 +1191,19 @@ class GLPaintRenderer(
             grainScale = paper.material.grainScale,
             seed = paper.seed,
         )
+        dryPaperRoughness = paper.material.roughness
+        dryPaperAbsorption = paper.material.absorption
+        dryPaperFiberDensity = paper.material.fiberDensity
+        paperVisualStrength = paper.visualStrength
+        val generatedTexture = PaperTextureGenerator.createBitmap(paper)
+        pendingPaperTextureBitmap = generatedTexture
+        Log.d(
+            "G5Paper",
+            "setPaper id=${paper.id} roughness=$dryPaperRoughness " +
+                "absorption=$dryPaperAbsorption fiberDensity=$dryPaperFiberDensity " +
+                "heightAmplitude=$dryPaperHeightAmplitude grainScale=$dryPaperGrainScale " +
+                    "visualStrength=$paperVisualStrength seed=$dryPaperSeed",
+        )
     }
     // ============================================================
 
@@ -1445,6 +1467,10 @@ class GLPaintRenderer(
         val paperAffinityLoc = GLES20.glGetUniformLocation(shader.program, "uPaperAffinity")
         val paperAmplitudeLoc = GLES20.glGetUniformLocation(shader.program, "uPaperHeightAmplitude")
         val paperScaleLoc = GLES20.glGetUniformLocation(shader.program, "uPaperGrainScale")
+        val paperRoughnessLoc = GLES20.glGetUniformLocation(shader.program, "uPaperRoughness")
+        val paperAbsorptionLoc = GLES20.glGetUniformLocation(shader.program, "uPaperAbsorption")
+        val paperFiberDensityLoc = GLES20.glGetUniformLocation(shader.program, "uPaperFiberDensity")
+        val paperResponseStrengthLoc = GLES20.glGetUniformLocation(shader.program, "uPaperResponseStrength")
         val drySeedLoc = GLES20.glGetUniformLocation(shader.program, "uDrySeed")
         val dryPressureLoc = GLES20.glGetUniformLocation(shader.program, "uDryPressure")
         val flowLoc = GLES20.glGetUniformLocation(shader.program, "uFlow")
@@ -1524,6 +1550,10 @@ class GLPaintRenderer(
             GLES20.glUniform1f(paperAffinityLoc, stamp.paperGrainAffinity)
             GLES20.glUniform1f(paperAmplitudeLoc, dryPaperHeightAmplitude)
             GLES20.glUniform1f(paperScaleLoc, dryPaperGrainScale)
+            GLES20.glUniform1f(paperRoughnessLoc, dryPaperRoughness)
+            GLES20.glUniform1f(paperAbsorptionLoc, dryPaperAbsorption)
+            GLES20.glUniform1f(paperFiberDensityLoc, dryPaperFiberDensity)
+            GLES20.glUniform1f(paperResponseStrengthLoc, stamp.paperResponseStrength)
             GLES20.glUniform1f(drySeedLoc, (dryPaperSeed + stamp.bristleSeed).toFloat())
             GLES20.glUniform1f(dryPressureLoc, stamp.dryPressure)
             GLES20.glUniform4f(color, colored.red, colored.green, colored.blue, colored.alpha)
@@ -2060,6 +2090,13 @@ class GLPaintRenderer(
         GLES20.glActiveTexture(GLES20.GL_TEXTURE2)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, strokeTextureHandle)
         GLES20.glUniform1i(GLES20.glGetUniformLocation(shader.program, "uStrokeTexture"), 2)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE4)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, paperTextureHandle)
+        GLES20.glUniform1i(GLES20.glGetUniformLocation(shader.program, "uPaperTexture"), 4)
+        GLES20.glUniform1f(
+            GLES20.glGetUniformLocation(shader.program, "uPaperVisualStrength"),
+            if (paperTextureHandle != 0) paperVisualStrength else 0f,
+        )
         // [MOD 2026-09-11] 传 uStrokeOpacity
         val opacityLoc = GLES20.glGetUniformLocation(shader.program, "uStrokeOpacity")
         if (opacityLoc != -1) {
@@ -2158,6 +2195,24 @@ class GLPaintRenderer(
     }
     // ============================================================
 
+    /** Uploads the CPU-generated Layer A paper tile only on the GL thread. */
+    private fun uploadPaperTextureIfNeeded() {
+        val bitmap = pendingPaperTextureBitmap ?: return
+        pendingPaperTextureBitmap = null
+        if (paperTextureHandle != 0) GLES20.glDeleteTextures(1, intArrayOf(paperTextureHandle), 0)
+        val handles = IntArray(1)
+        GLES20.glGenTextures(1, handles, 0)
+        check(handles[0] != 0) { "Unable to allocate paper texture" }
+        paperTextureHandle = handles[0]
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, paperTextureHandle)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT)
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+        bitmap.recycle()
+    }
+
     // ============================================================
     // [DEBUG LOG 2026-09-10] createBrushTexture 调用追踪
     // 用于排查"切换界面后纹理消失"：每次上传的 handle 是多少
@@ -2179,6 +2234,12 @@ class GLPaintRenderer(
     // ============================================================
 
     override fun release() {
+        pendingPaperTextureBitmap?.recycle()
+        pendingPaperTextureBitmap = null
+        if (paperTextureHandle != 0) {
+            GLES20.glDeleteTextures(1, intArrayOf(paperTextureHandle), 0)
+            paperTextureHandle = 0
+        }
         brushTextureHandles.values.forEach { handle ->
             GLES20.glDeleteTextures(1, intArrayOf(handle), 0)
         }
